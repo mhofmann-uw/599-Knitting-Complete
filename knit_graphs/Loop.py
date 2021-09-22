@@ -1,28 +1,32 @@
-import json
+"""The Loop data structure"""
 from typing import List, Optional
 
 
 class Loop:
+    """
+    A class to represent a single loop structure
+    ...
+
+    Attributes
+    ----------
+    is_twisted: bool
+        True if the loop is twisted
+    parent_loops: List[Loop]
+        The list of loops that this loop is pulled through.
+        The order in the list implies the stacking order with the first loop at the bottom the stack
+    """
     def __init__(self, loop_id: int, yarn_id: str, is_twisted: bool = False):
         """
-        :param loop_id: id of loop. IDs should represent the order that loops are created with the first loop being created with id 0
-        :param is_twisted: True if the loop should be twisted (created by pulling a carrier backwards across the needle)
+        :param loop_id: id of loop. IDs should represent the order that loops are created
+            with the first loop being created with id 0
+        :param is_twisted: True if the loop should be twisted
+            (created by pulling a carrier backwards across the needle)
         """
         self.is_twisted = is_twisted
-        # self.course = course
-        # self.index_in_course = index_in_course
         assert loop_id >= 0, f"{loop_id}: Loop_id must be non-negative"
         self._loop_id: int = loop_id
         self.yarn_id = yarn_id
-        # the list of loops that this loop is pulled through. The order in the list implies the stacking order with the first loop at the bottom the stack
         self.parent_loops: List[Loop] = []
-        # self.planeDeformationByChildren = None
-        # self.planeDeformationByParents = None
-        # self.curvature = None
-        # self.waleDeformation = None
-        # self.waleCompression = None
-        # self.maxWaleDepth = None
-        # self.loopParams = {}
 
     def add_parent_loop(self, parent, stack_position: Optional[int] = None):
         """
@@ -37,28 +41,38 @@ class Loop:
 
     @property
     def loop_id(self) -> int:
+        """
+        :return: the id of the loop
+        """
         return self._loop_id
 
-    # @property
-    # def course(self) -> int:
-    #     return self._row
-    #
-    # @course.setter
-    # def course(self, row: int):
-    #     assert row >= -1, f"{row}: Cannot be at row below cast on (-1)"
-    #     self._row: int = row
+    def prior_loop_id(self, knitGraph) -> Optional[int]:
+        """
+        :param knitGraph: the knitgraph to check for prior loops
+        :return: the id of the loop that comes before this in the knitgraph
+        """
+        prior_id = self.loop_id - 1
+        if knitGraph.graph.has_node(prior_id):
+            return prior_id
+        else:
+            return None
 
-    # @property
-    # def index_in_course(self) -> int:
-    #     return self._index_in_row
-    #
-    # @index_in_course.setter
-    # def index_in_course(self, index_in_row: int):
-    #     assert index_in_row >= 0, f"{index_in_row}: Cannot be at negative in-row index"
-    #     self._index_in_row: int = index_in_row
+    def next_loop_id(self, knitGraph) -> Optional[int]:
+        """
+        :param knitGraph: the knitgraph to check for next loops
+        :return: the id of the loop that comes after this in the knitgraph
+        """
+        next_id = self.loop_id + 1
+        if knitGraph.graph.has_node(next_id):
+            return next_id
+        else:
+            return None
 
     @property
     def is_twisted(self) -> bool:
+        """
+        :return: True if the loop is twisted
+        """
         return self._is_twisted
 
     @is_twisted.setter
@@ -67,6 +81,9 @@ class Loop:
 
     @property
     def yarn_id(self) -> str:
+        """
+        :return: the id of the yarn that makes this loop
+        """
         return self._yarn_id
 
     @yarn_id.setter
@@ -96,4 +113,3 @@ class Loop:
 
     def __repr__(self):
         return str(self)
-

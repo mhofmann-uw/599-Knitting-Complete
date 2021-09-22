@@ -1,21 +1,36 @@
+"""
+The Yarn Data Structure
+"""
 from typing import Optional, Tuple
 
 import networkx as networkx
 
 from knit_graphs.Loop import Loop
+from knitting_machine.Machine_State import Yarn_Carrier
 
 
 class Yarn:
-    def __init__(self, yarn_id: str, last_loop: Optional[Loop] = None):
+    """
+    A class to represent a yarn structure
+    ...
+
+    Attributes
+    ----------
+    yarn_graph: networkx.DiGraph
+        A directed graph structure (always a list) of loops on the yarn
+    last_loop_id: int
+        The id of the last loop on the yarn, none if no loops on the yarn
+    """
+
+    def __init__(self, yarn_id: str, last_loop: Optional[Loop] = None, carrier_id: int = 3):
         """
         A Graph structure to show the yarn-wise relationship between loops
         :param yarn_id: the identifier for this loop
         :param last_loop: the loop to add onto this yarn at the beginning. May be none if yarn is empty.
         """
-        # Create a directed graph representing this Yarn
+        assert 0 < carrier_id < 11, f"Invalid yarn carrier {carrier_id}"
+        self._carrier: Yarn_Carrier = Yarn_Carrier(carrier_id)
         self.yarn_graph: networkx.DiGraph = networkx.DiGraph()
-
-        # Integer representing the loop_id of the lastLoop in this Yarn
         if last_loop is None:
             self.last_loop_id = None
         else:
@@ -23,10 +38,21 @@ class Yarn:
         self._yarn_id: str = yarn_id
 
     @property
+    def carrier(self) -> Yarn_Carrier:
+        """
+        :return: the yarn-carrier holding this yarn
+        """
+        return self._carrier
+
+    @property
     def yarn_id(self) -> str:
+        """
+        :return: the id of this yarn
+        """
         return self._yarn_id
 
-    def add_loop_to_end(self, loop_id: int = None, loop: Optional[Loop] = None, is_twisted: bool = False) -> Tuple[int, Loop]:
+    def add_loop_to_end(self, loop_id: int = None, loop: Optional[Loop] = None,
+                        is_twisted: bool = False) -> Tuple[int, Loop]:
         """
         Adds the loop at the end of the yarn
         :param is_twisted: The parameter used for twisting the loop if it is created in the method
@@ -36,7 +62,8 @@ class Yarn:
         """
         if loop_id is None:  # Create a new Loop ID
             if loop is not None:  # get the loop id from the provided loop
-                assert self.last_loop_id > loop.loop_id, f"Cannot add loop {loop.loop_id} after loop {self.last_loop_id}."
+                assert self.last_loop_id > loop.loop_id, \
+                    f"Cannot add loop {loop.loop_id} after loop {self.last_loop_id}."
                 loop_id = loop.loop_id
             elif self.last_loop_id is None:  # the first loop on the yarn
                 loop_id = 0
@@ -71,5 +98,3 @@ class Yarn:
             raise AttributeError
         else:
             return self.yarn_graph.nodes[item].loop
-    # def get_loops(self) -> List[int]:
-    #     return [*self.yarn_graph.nodes]

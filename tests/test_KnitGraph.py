@@ -1,5 +1,5 @@
-from knit_graphs.KnitGraph import create_stst_knit_graph
+from knit_graphs.knitgraph_generators import stockinette
 
 
 def test_create_stst_knit_graph():
-    knitGraph = create_stst_knit_graph()
+    knitGraph = stockinette()

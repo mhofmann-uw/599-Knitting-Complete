@@ -1,34 +1,39 @@
+"""The graph structure used to represent knitted objects"""
 from enum import Enum
-from typing import Dict, Optional
+from typing import Dict, Optional, List, Tuple
 
 import networkx
 
 from knit_graphs.Loop import Loop
 from knit_graphs.Yarn import Yarn
+from knitting_machine.Machine_State import Yarn_Carrier
 
 
 class Pull_Direction(Enum):
+    """An enumerator of the two pull directions of a loop"""
     BtF = "BtF"
     FtB = "FtB"
 
 
 class KnitGraph:
-    def __init__(self):
-        # Directed graph for this KnitGraph
-        self.graph: networkx.DiGraph = networkx.DiGraph()
+    """
+    A class to knitted structures
+    ...
 
-        # A map of each unique loop id to its loop
+    Attributes
+    ----------
+    graph : networkx.DiGraph
+        the directed-graph structure of loops pulled through other loops
+    loops: Dict[int, Loop]
+        A map of each unique loop id to its loop
+    yarns: Dict[str, Yarn]
+         A list of Yarns used in the graph
+    """
+    def __init__(self):
+        self.graph: networkx.DiGraph = networkx.DiGraph()
         self.loops: Dict[int, Loop] = {}
         self._last_loop_id: int = -1
-
-        # A list of Yarns used in teh graph
         self.yarns: Dict[str, Yarn] = {}
-
-        # # 2D array layout of all the Loops for this KnitGraph
-        # self.rows: Dict[int, List[Loop]] = {}
-        #
-        # # Index of the last row
-        # self.maxRow: int = 0
 
     def add_loop(self, loop: Loop):
         """
@@ -38,6 +43,7 @@ class KnitGraph:
         assert loop.yarn_id in self.yarns, f"No yarn {loop.yarn_id} in this graph"
         if loop not in self.yarns[loop.yarn_id]:  # make sure the loop is on the yarn specified
             self.yarns[loop.yarn_id].add_loop_to_end(loop_id=None, loop=loop)
+        self.loops[loop.loop_id] = loop
 
     def add_yarn(self, yarn: Yarn):
         """
@@ -45,20 +51,56 @@ class KnitGraph:
         """
         self.yarns[yarn.yarn_id] = yarn
 
-    def connect_loops(self, parent_loop_id: int, child_loop_id: int, pull_direction: Pull_Direction = Pull_Direction.BtF, stack_position: Optional[int] = None):
+    def connect_loops(self, parent_loop_id: int, child_loop_id: int,
+                      pull_direction: Pull_Direction = Pull_Direction.BtF,
+                      stack_position: Optional[int] = None, depth: int = 0, parent_offset: int = 0):
         """
         Creates a stitch-edge by connecting a parent and child loop
+        :param parent_offset: The direction and distance, oriented from the front, to the parent_loop
+        :param depth: -1, 0, 1: The crossing depth in a cable over other stitches. 0 if Not crossing other stitches
         :param parent_loop_id: the id of the parent loop to connect to this child
         :param child_loop_id:  the id of the child loop to connect to the parent
         :param pull_direction: the direction the child is pulled through the parent
         :param stack_position: The position to insert the parent into, by default add on top of the stack
         """
-        assert parent_loop_id in self, f"{parent_loop_id} is not in this graph"
-        assert child_loop_id in self, f"{child_loop_id} is not in this graph"
-        self.graph.add_edge(parent_loop_id, child_loop_id, pull_direction=pull_direction)
+        assert parent_loop_id in self, f"parent loop {parent_loop_id} is not in this graph"
+        assert child_loop_id in self, f"child loop {child_loop_id} is not in this graph"
+        self.graph.add_edge(parent_loop_id, child_loop_id, pull_direction=pull_direction, depth=depth, parent_offset=parent_offset)
         child_loop = self[child_loop_id]
         parent_loop = self[parent_loop_id]
         child_loop.add_parent_loop(parent_loop, stack_position)
+
+    def get_courses(self) -> Tuple[Dict[int, float], Dict[float, List[int]]]:
+        """
+        :return: A dictionary of loop_ids to the course they are on,
+        a dictionary or course ids to the loops on that course in the order of creation
+        """
+        loop_ids_to_course = {}
+        for loop_id in self.graph.nodes:
+            loop = self.loops[loop_id]
+            prior_id = loop.prior_loop_id(self)
+            if prior_id is None:  # the first loop in the graph
+                loop_ids_to_course[loop_id] = 0
+            elif self.graph.has_edge(prior_id, loop_id):  # stitch between the two creates a course change
+                loop_ids_to_course[loop_id] = loop_ids_to_course[prior_id] + 1
+            else:
+                loop_ids_to_course[loop_id] = loop_ids_to_course[prior_id]
+
+        course_to_loop_ids = {}
+        for loop_id, course in loop_ids_to_course.items():
+            if course not in course_to_loop_ids:
+                course_to_loop_ids[course] = []
+            course_to_loop_ids[course].append(loop_id)
+
+        for course in course_to_loop_ids:
+            course_to_loop_ids[course].sort()
+        return loop_ids_to_course, course_to_loop_ids
+
+    def get_carriers(self) -> List[Yarn_Carrier]:
+        """
+        :return: A list of yarn carriers that hold the yarns involved in this graph
+        """
+        return [ yarn.carrier for yarn in self.yarns.values()]
 
     def __contains__(self, item):
         """
@@ -81,26 +123,3 @@ class KnitGraph:
             raise AttributeError
         else:
             return self.graph.nodes[item]["loop"]
-
-
-def create_stst_knit_graph(width: int = 4, height: int = 4) -> KnitGraph:
-    knitGraph = KnitGraph()
-    yarn = Yarn("yarn")
-    knitGraph.add_yarn(yarn)
-    first_row = []
-    for _ in range(0, width):
-        loop_id, loop = yarn.add_loop_to_end()
-        first_row.append(loop_id)
-        knitGraph.add_loop(loop)
-
-    prior_row = first_row
-    for _ in range(1, height):
-        next_row = []
-        for parent_id in reversed(prior_row):
-            child_id, child = yarn.add_loop_to_end()
-            next_row.append(child_id)
-            knitGraph.add_loop(child)
-            knitGraph.connect_loops(parent_id, child_id)
-        prior_row = next_row
-
-    return knitGraph
