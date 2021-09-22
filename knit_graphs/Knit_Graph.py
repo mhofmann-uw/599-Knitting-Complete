@@ -14,8 +14,17 @@ class Pull_Direction(Enum):
     BtF = "BtF"
     FtB = "FtB"
 
+    def opposite(self):
+        """
+        :return: returns the opposite pull direction of self
+        """
+        if self is Pull_Direction.BtF:
+            return Pull_Direction.FtB
+        else:
+            return Pull_Direction.BtF
 
-class KnitGraph:
+
+class Knit_Graph:
     """
     A class to knitted structures
     ...
@@ -29,6 +38,7 @@ class KnitGraph:
     yarns: Dict[str, Yarn]
          A list of Yarns used in the graph
     """
+
     def __init__(self):
         self.graph: networkx.DiGraph = networkx.DiGraph()
         self.loops: Dict[int, Loop] = {}
@@ -70,10 +80,43 @@ class KnitGraph:
         parent_loop = self[parent_loop_id]
         child_loop.add_parent_loop(parent_loop, stack_position)
 
-    def get_courses(self) -> Tuple[Dict[int, float], Dict[float, List[int]]]:
+    def get_courses(self) -> Tuple[Dict[int, int], Dict[int, List[int]]]:
         """
         :return: A dictionary of loop_ids to the course they are on,
         a dictionary or course ids to the loops on that course in the order of creation
+        The first set of loops in the graph is on course 0.
+        A course change occurs when a loop has a parent loop that is in the last course.
+        """
+        loop_ids_to_course = {}
+        course_to_loop_ids = {}
+        current_course_set = set()
+        current_course = []
+        course = 0
+        for loop_id in self.graph.nodes:
+            no_parents_in_course = True
+            for parent_id in self.graph.predecessors(loop_id):
+                if parent_id in current_course_set:
+                    no_parents_in_course = False
+                    break
+            if no_parents_in_course:
+                current_course_set.add(loop_id)
+                current_course.append(loop_id)
+            else:
+                course_to_loop_ids[course] = current_course
+                current_course = [loop_id]
+                current_course_set = {loop_id}
+                course += 1
+            loop_ids_to_course[loop_id] = course
+        course_to_loop_ids[course] = current_course
+        return loop_ids_to_course, course_to_loop_ids
+
+    # @deprecated("Deprecated because this only works in rows, but not round construction")
+    def deprecated_get_course(self) -> Tuple[Dict[int, int], Dict[int, List[int]]]:
+        """
+        :return: A dictionary of loop_ids to the course they are on,
+        a dictionary or course ids to the loops on that course in the order of creation
+        The first set of loops in the graph is on course 0.
+        A course change occurs when a loop has a parent loop that is in the last course.
         """
         loop_ids_to_course = {}
         for loop_id in self.graph.nodes:
@@ -100,7 +143,7 @@ class KnitGraph:
         """
         :return: A list of yarn carriers that hold the yarns involved in this graph
         """
-        return [ yarn.carrier for yarn in self.yarns.values()]
+        return [yarn.carrier for yarn in self.yarns.values()]
 
     def __contains__(self, item):
         """

@@ -1,6 +1,6 @@
-from knit_graphs.knitGraph_Viz import visualize_knitGraph
-from knit_graphs.knitgraph_generators import *
-from knitting_machine.Machine_State import Yarn_Carrier, Pass_Direction
+from debugging_tools.knit_graph_viz import visualize_knitGraph
+from debugging_tools.simple_knitgraphs import *
+from knitting_machine.Machine_State import Pass_Direction
 from knitting_machine.knitgraph_to_knitout import Knitout_Generator
 
 

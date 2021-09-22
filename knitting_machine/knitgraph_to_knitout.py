@@ -1,7 +1,7 @@
 """Script used to create knitout instructions from a knitgraph"""
 from typing import Dict, List, Tuple, Optional
 
-from knit_graphs.KnitGraph import KnitGraph, Pull_Direction
+from knit_graphs.Knit_Graph import Knit_Graph, Pull_Direction
 from knitting_machine.Machine_State import Machine_State, Needle, Pass_Direction
 from knitting_machine.machine_operations import outhook
 from knitting_machine.operation_sets import Carriage_Pass, Instruction_Type
@@ -12,7 +12,7 @@ class Knitout_Generator:
     A class that is used to generate a single yarn knit-graph
     """
 
-    def __init__(self, knit_graph: KnitGraph):
+    def __init__(self, knit_graph: Knit_Graph):
         """
         :param knit_graph: the knitgraph to generate instructions for
         """
