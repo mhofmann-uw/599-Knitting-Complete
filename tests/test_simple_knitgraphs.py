@@ -21,3 +21,11 @@ def test_twisted_stripes():
 
 def test_lace():
     visualize_knitGraph(lace(4, 4))
+
+
+if __name__ == "__main__":
+    test_stockinette()
+    test_rib()
+    test_seed()
+    test_twisted_stripes()
+    test_lace()
