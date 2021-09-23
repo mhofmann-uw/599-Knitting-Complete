@@ -133,3 +133,7 @@ dmypy.json
 
 #PyVIS
 *.html
+
+
+#knitout
+*.k
