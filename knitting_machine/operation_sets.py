@@ -136,11 +136,13 @@ class Carriage_Pass:
         :param comment: A comment to add to every instruction in the pass
         :return: A list of knitout instructions that executes the instruction on each needle
         """
+
+        # bring in yarns that are not yet in operation
         instructions = []
-        in_hooked_carriers = []
+        in_hooked_carriers = set()
         for carrier in self.carrier_set:
             if carrier not in self.machine_state.yarns_in_operation:
-                in_hooked_carriers.append(carrier)
+                in_hooked_carriers.add(carrier)
                 instructions.append(inhook(self.machine_state, [carrier]))
 
         starting_needles = self._sorted_needles()
@@ -154,6 +156,8 @@ class Carriage_Pass:
             instructions.append(instruction)
         self.machine_state.last_carriage_direction = self.direction
 
-        for carrier in in_hooked_carriers:
-            instructions.append(releasehook(self.machine_state, [carrier]))
+        # release hooks on second pass with inhooks
+        for carrier in [*self.machine_state.in_hooks]:
+            if carrier not in in_hooked_carriers:  # don't release hook on first pass with in hook
+                instructions.append(releasehook(self.machine_state, [carrier]))
         return instructions

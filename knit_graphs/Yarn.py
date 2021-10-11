@@ -22,12 +22,14 @@ class Yarn:
         The id of the last loop on the yarn, none if no loops on the yarn
     """
 
-    def __init__(self, yarn_id: str, last_loop: Optional[Loop] = None, carrier_id: int = 3):
+    def __init__(self, yarn_id: str, knit_graph, last_loop: Optional[Loop] = None, carrier_id: int = 3):
         """
         A Graph structure to show the yarn-wise relationship between loops
+        :param knit_graph: The knitgraph the yarn is used in
         :param yarn_id: the identifier for this loop
         :param last_loop: the loop to add onto this yarn at the beginning. May be none if yarn is empty.
         """
+        self.knit_graph = knit_graph
         assert 0 < carrier_id < 11, f"Invalid yarn carrier {carrier_id}"
         self._carrier: Yarn_Carrier = Yarn_Carrier(carrier_id)
         self.yarn_graph: networkx.DiGraph = networkx.DiGraph()
@@ -57,7 +59,7 @@ class Yarn:
         Adds the loop at the end of the yarn
         :param is_twisted: The parameter used for twisting the loop if it is created in the method
         :param loop: The loop to be added at this id. If none, an non-twisted loop will be created
-        :param loop_id: the id of the new loop, if the loopId is none, it defaults to 1 more than last put on this yarn
+        :param loop_id: the id of the new loop, if the loopId is none, it defaults to 1 more than last loop in the graph
         :return: the loop_id added to the yarn, the loop added to the yarn
         """
         if loop_id is None:  # Create a new Loop ID
@@ -68,7 +70,7 @@ class Yarn:
             elif self.last_loop_id is None:  # the first loop on the yarn
                 loop_id = 0
             else:  # the next loop on this yarn
-                loop_id = self.last_loop_id + 1
+                loop_id = self.knit_graph.last_loop_id + 1
         if loop is None:  # create a loop from default information
             loop = Loop(loop_id, self.yarn_id, is_twisted)
         self.yarn_graph.add_node(loop_id, loop=loop)

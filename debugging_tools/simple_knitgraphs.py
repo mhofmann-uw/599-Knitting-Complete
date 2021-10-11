@@ -10,7 +10,7 @@ def stockinette(width: int = 4, height: int = 4) -> Knit_Graph:
     :return: a knitgraph of stockinette on one yarn of width stitches by height course
     """
     knitGraph = Knit_Graph()
-    yarn = Yarn("yarn")
+    yarn = Yarn("yarn", knitGraph)
     knitGraph.add_yarn(yarn)
     first_row = []
     for _ in range(0, width):
@@ -44,7 +44,7 @@ def rib(width: int = 4, height: int = 4, rib_width: int = 1) -> Knit_Graph:
     assert rib_width <= width
 
     knitGraph = Knit_Graph()
-    yarn = Yarn("yarn")
+    yarn = Yarn("yarn", knitGraph)
     knitGraph.add_yarn(yarn)
     first_row = []
     for _ in range(0, width):
@@ -54,11 +54,11 @@ def rib(width: int = 4, height: int = 4, rib_width: int = 1) -> Knit_Graph:
 
     prior_row = first_row
     next_row = []
-    for column, parent_id in enumerate(reversed(prior_row)):
+    for column, parent_id in reversed([*enumerate(prior_row)]):
         child_id, child = yarn.add_loop_to_end()
         next_row.append(child_id)
         knitGraph.add_loop(child)
-        rib_id = column / rib_width
+        rib_id = int(int(column) / int(rib_width))
         if rib_id % 2 == 0:  # even ribs:
             pull_direction = Pull_Direction.BtF
         else:
@@ -90,7 +90,7 @@ def seed(width: int = 4, height=4) -> Knit_Graph:
     assert height > 1
 
     knitGraph = Knit_Graph()
-    yarn = Yarn("yarn")
+    yarn = Yarn("yarn", knitGraph)
     knitGraph.add_yarn(yarn)
     first_row = []
     for _ in range(0, width):
@@ -131,8 +131,9 @@ def twisted_stripes(width: int = 4, height=5, left_twists: bool = True) -> Knit_
     :param height:  the number of courses of the swatch
     :return: A knitgraph with repeating pattern of twisted stitches surrounded by knit wales
     """
+    assert width % 4 == 0, "Pattern is 4 loops wide"
     knitGraph = Knit_Graph()
-    yarn = Yarn("yarn")
+    yarn = Yarn("yarn", knitGraph)
     knitGraph.add_yarn(yarn)
 
     # Add the first course of loops
@@ -234,7 +235,7 @@ def lace(width: int = 4, height: int = 4):
     :return: a knitgraph with k2togs and yarn-overs surrounded by knit wales
     """
     knitGraph = Knit_Graph()
-    yarn = Yarn("yarn")
+    yarn = Yarn("yarn", knitGraph)
     knitGraph.add_yarn(yarn)
     first_row = []
     for _ in range(0, width):
@@ -276,9 +277,13 @@ def lace(width: int = 4, height: int = 4):
 
 
 def lace_and_twist():
+    """
+
+    :return:
+    """
     width = 13
     knitGraph = Knit_Graph()
-    yarn = Yarn("yarn")
+    yarn = Yarn("yarn", knitGraph)
     knitGraph.add_yarn(yarn)
     first_row = []
     for _ in range(0, width):
@@ -317,3 +322,78 @@ def lace_and_twist():
         knitGraph.connect_loops(parent_id, child_id)
 
     return knitGraph
+
+
+def short_rows(width: int = 10, buffer_height: int = 2) -> Knit_Graph:
+    """
+    :param buffer_height: THe height of the buffer on top and bottom
+    :param width: the width of the swatch, must be greater than 4
+    :return: a knitgraph with width in stockinette with 4 short rows in the center of a buffer
+    """
+    assert width > 4, "Not enough stitches to short row"
+    # Get the base of the graph
+    knit_graph = stockinette(width=width, height=buffer_height)
+    yarn = [*knit_graph.yarns.values()][0]
+
+    loop_ids_to_course, course_to_loop_ids = knit_graph.get_courses()
+    if len(course_to_loop_ids) == 1:
+        top_course = course_to_loop_ids[0]
+    else:
+        top_course = max(*course_to_loop_ids.keys())
+        top_course = course_to_loop_ids[top_course]
+
+    # Knit to last two loops and reserve on left
+    next_row = []
+    reversed_top_course = [*reversed(top_course)]
+    reserved_top_left = reversed_top_course[-2:]
+    for parent_id in reversed_top_course[:-2]:
+        child_id, child = yarn.add_loop_to_end()
+        next_row.append(child_id)
+        knit_graph.add_loop(child)
+        knit_graph.connect_loops(parent_id, child_id)
+
+    # Knit to last two loops and reserve on right
+    top_course = next_row
+    next_row = []
+    reversed_top_course = [*reversed(top_course)]
+    reserved_top_right = reversed_top_course[-2:]
+    for parent_id in reversed_top_course[:-2]:
+        child_id, child = yarn.add_loop_to_end()
+        next_row.append(child_id)
+        knit_graph.add_loop(child)
+        knit_graph.connect_loops(parent_id, child_id)
+
+    # Knit over last row and reserved loops on left
+    top_course = next_row
+    next_row = []
+    reversed_top_course = [*reversed(top_course)]
+    reversed_top_course.extend(reserved_top_left)
+    for parent_id in reversed_top_course:
+        child_id, child = yarn.add_loop_to_end()
+        next_row.append(child_id)
+        knit_graph.add_loop(child)
+        knit_graph.connect_loops(parent_id, child_id)
+
+    # knit over last row and reserved loops on right
+    top_course = next_row
+    next_row = []
+    reversed_top_course = [*reversed(top_course)]
+    reversed_top_course.extend(reserved_top_right)
+    for parent_id in reversed_top_course:
+        child_id, child = yarn.add_loop_to_end()
+        next_row.append(child_id)
+        knit_graph.add_loop(child)
+        knit_graph.connect_loops(parent_id, child_id)
+
+    # add 5 stst rows
+    prior_row = next_row
+    for _ in range(0, buffer_height):
+        next_row = []
+        for parent_id in reversed(prior_row):
+            child_id, child = yarn.add_loop_to_end()
+            next_row.append(child_id)
+            knit_graph.add_loop(child)
+            knit_graph.connect_loops(parent_id, child_id)
+        prior_row = next_row
+
+    return knit_graph

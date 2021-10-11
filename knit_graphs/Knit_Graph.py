@@ -42,7 +42,7 @@ class Knit_Graph:
     def __init__(self):
         self.graph: networkx.DiGraph = networkx.DiGraph()
         self.loops: Dict[int, Loop] = {}
-        self._last_loop_id: int = -1
+        self.last_loop_id: int = -1
         self.yarns: Dict[str, Yarn] = {}
 
     def add_loop(self, loop: Loop):
