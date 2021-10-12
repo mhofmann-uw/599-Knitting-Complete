@@ -170,11 +170,11 @@ def twisted_stripes(width: int = 4, height=5, left_twists: bool = True) -> Knit_
                 add_loop_and_knit(parent_id)
             elif col % 4 == 1:
                 next_parent_id = reversed_prior_course[col + 1]
-                add_loop_and_knit(next_parent_id, twist_depth, -1)
+                add_loop_and_knit(next_parent_id, depth=twist_depth, parent_offset=1)
                 twist_depth = -1 * twist_depth  # switch depth for neighbor
             elif col % 4 == 2:
                 next_parent_id = reversed_prior_course[col - 1]
-                add_loop_and_knit(next_parent_id, twist_depth, 1)
+                add_loop_and_knit(next_parent_id, depth=twist_depth, parent_offset=-1)
                 twist_depth = -1 * twist_depth  # switch depth for next twist
         prior_course = next_course
 

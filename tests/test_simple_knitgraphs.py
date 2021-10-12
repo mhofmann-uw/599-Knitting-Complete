@@ -8,7 +8,7 @@ def test_stockinette():
 
 
 def test_rib():
-    visualize_knitGraph(rib(6, 6, 2))
+    visualize_knitGraph(rib(5, 4, 1))
 
 
 def test_seed():
@@ -16,7 +16,7 @@ def test_seed():
 
 
 def test_twisted_stripes():
-    visualize_knitGraph(twisted_stripes(8, 5))
+    visualize_knitGraph(twisted_stripes(4, 5))
 
 
 def test_lace():

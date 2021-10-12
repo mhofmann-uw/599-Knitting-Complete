@@ -77,6 +77,7 @@ class Yarn:
         if self.last_loop_id is not None:  # make a link between this and the last yarn
             self.yarn_graph.add_edge(self.last_loop_id, loop_id)
         self.last_loop_id = loop_id
+        self.knit_graph.last_loop_id = loop_id
         return loop_id, loop
 
     def __contains__(self, item):
