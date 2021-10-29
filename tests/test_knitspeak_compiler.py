@@ -29,11 +29,6 @@ def test_cable():
     knit_graph = compiler.compile(11, 6, pattern)
     visualize_knitGraph(knit_graph, "cables.html")
 
-def test_twist():
-    pattern = "all rs rows k, lc1|1, k. all ws rows p."
-    compiler = Knitspeak_Compiler()
-    knit_graph = compiler.compile(4, 2, pattern)
-    visualize_knitGraph(knit_graph, "cables.html")
 
 def test_lace():
     pattern = r"""
@@ -44,12 +39,6 @@ def test_lace():
     knit_graph = compiler.compile(9, 6, pattern)
     visualize_knitGraph(knit_graph, "lace.html")
 
-def test_small_lace():
-    pattern = "all rs rows k, k2tog, yo, k. all ws rows p."
-    compiler = Knitspeak_Compiler()
-    knit_graph = compiler.compile(4, 2, pattern)
-    visualize_knitGraph(knit_graph, "lace.html")
-
 
 def test_write_slipped_rib():
     rib_width = 1
@@ -57,6 +46,21 @@ def test_write_slipped_rib():
     compiler = Knitspeak_Compiler()
     knit_graph = compiler.compile(6, 3, pattern)
     visualize_knitGraph(knit_graph, "slipped_rib.html")
+
+
+def test_write_short_rows():
+    pattern = r"""
+        1st row [k] to end.
+        2nd row [p] to last 1 sts, slip 1.
+        3rd row slip 1, [k] to last 1 sts, slip 1.
+        4th row slip 1, [p] to last 2 sts, slip 2.
+        5th row slip 2, [k] to last 2 sts, slip 2.
+        6th row slip 2, [p] to end.
+        7th row [k] to end.
+    """
+    compiler = Knitspeak_Compiler()
+    knit_graph = compiler.compile(5, 7, pattern)
+    visualize_knitGraph(knit_graph, "short_rows.html")
 
 
 if __name__ == "__main__":
