@@ -142,13 +142,17 @@ class Knitout_Generator:
         parent loops mapped to their offsets in the front of cables
         parent loops mapped to their offsets in the back of cables
         """
-        parent_loops_to_needles: Dict[int, Needle] = {}
-        loop_id_to_target_needle: Dict[int, Needle] = {}
-        parents_to_offsets: Dict[int, int] = {}
-        front_cable_offsets: Dict[int, int] = {}  # cable parent to offset
-        back_cable_offsets: Dict[int, int] = {}
-        decrease_offsets: Dict[int, int] = {}
-        max_needle = len(loop_ids) - 1
+        parent_loops_to_needles: Dict[int, Needle] = {}  # key loop_ids to the needle they are currently on
+        loop_id_to_target_needle: Dict[int, Needle] = {}  # key loop_ids to the needle they need to be on to knit
+        parents_to_offsets: Dict[int, int] = {}  # key parent loop_ids to their offset from their child
+        # .... i.e., self._knit_graph.graph[parent_id][loop_id]["parent_offset"]
+        front_cable_offsets: Dict[int, int] = {}  # key parent loop_id to the offset to their child
+        # .... only include loops that cross in front. i.e., self._knit_graph.graph[parent_id][loop_id]["depth"] > 0
+        back_cable_offsets: Dict[int, int] = {}  # key parent loop_id to the offset to their child
+        # .... only include loops that cross in back. i.e., self._knit_graph.graph[parent_id][loop_id]["depth"] < 0
+        decrease_offsets: Dict[int, int] = {}  # key parent loop_id to the offset to their chidl
+        # .... only includes parents involved in a decrease
+        max_needle = len(loop_ids) - 1  # last needle being used to create this swatch
         for loop_pos, loop_id in enumerate(loop_ids):  # find target needle locations of each loop in the course
             parent_ids = [*self._knit_graph.graph.predecessors(loop_id)]
             for parent_id in parent_ids:  # find current needle of all parent loops
@@ -180,14 +184,14 @@ class Knitout_Generator:
                 parents_to_offsets[parent_id] = parent_offset
             else:  # decrease, the bottom parent loop in the stack  will be on the target needle
                 loop = self._knit_graph.loops[loop_id]
-                target_needle = None  # reset on first parent
+                target_needle = None # re-assigned on first iteration to needle of first parent
                 for i, parent in enumerate(loop.parent_loops):
                     parent_needle = parent_loops_to_needles[parent.loop_id]
                     if i == 0:  # first parent in stack
-                        target_needle = Needle(is_front=True, position=parent_needle.position)
-                        # all decreases are knits
-                        loop_id_to_target_needle[loop_id] = target_needle
-                    offset = target_needle.position - parent_needle.position
+                        target_needle = parent_needle
+                    loop_id_to_target_needle[loop_id] = target_needle
+                    offset = self._knit_graph.graph[parent.loop_id][loop_id]["parent_offset"]
+                    # offset = target_needle.position - parent_needle.position # todo reknit to check this is right
                     parents_to_offsets[parent.loop_id] = offset
                     decrease_offsets[parent.loop_id] = offset
 
@@ -197,9 +201,9 @@ class Knitout_Generator:
     def _do_cable_transfers(self, parent_loops_to_needles: Dict[int, Needle], front_cable_offsets: Dict[int, int],
                             back_cable_offsets: Dict[int, int]):
         """
-        Transfer all to back
+        Transfer all parent loops to back bed
         For front_cables:
-            in order of offsets transfer to front
+            in order of offsets (i.e., 1, 2, 3) transfer to front
         for back_cables
             in order of offsets transfer to back
         :param parent_loops_to_needles: the parent loops mapped to their current needles
@@ -226,55 +230,48 @@ class Knitout_Generator:
                     back_cable_xfers[offset] = {}
                 offset_needle = front_needle.offset(offset)
                 back_cable_xfers[offset][back_needle] = None, offset_needle
-
         carriage_pass = Carriage_Pass(Instruction_Type.Xfer, None, xfers_to_back, [], self._machine_state)
         self._add_carriage_pass(carriage_pass, "cables to back")
-
         for offset, xfer_params in front_cable_xfers.items():
             carriage_pass = Carriage_Pass(Instruction_Type.Xfer, None, xfer_params, [], self._machine_state)
-            self._add_carriage_pass(carriage_pass, f"front {offset} to front")
+            self._add_carriage_pass(carriage_pass, f"front of cable at offset {offset} to front")
         for offset, xfer_params in back_cable_xfers.items():
             carriage_pass = Carriage_Pass(Instruction_Type.Xfer, None, xfer_params, [], self._machine_state)
-            self._add_carriage_pass(carriage_pass, f"back {offset} to front")
+            self._add_carriage_pass(carriage_pass, f"back of cable at offset {offset} to front")
 
     def _do_decrease_transfers(self, parent_loops_to_needles: Dict[int, Needle], decrease_offsets: Dict[int, int]):
         """
-        From lace Transfer post https://textiles-lab.github.io/posts/2018/02/07/lace-transfers/:
-        Transfer all -1's from all blocks.
-        Return all -1's from all blocks to the front at an offset of -1.
-        Transfer all 1's from all blocks to the back.
-        Return all 1's from all blocks to the front at offset +1.
+        Based on the schoolbus algorithm.
+         Transfer all loops in decrease to the opposite side
+         Bring the loops back to their offset needle in the order of offsets from negative to positive offsets
+        Note that we are restricting our decreases to be offsets of 1 or -1 due to limitations of the machine.
+        This is not a completely general method and does not garuntee stacking order of our decreases
+        A more advanced method can be found at:
+        https://textiles-lab.github.io/posts/2018/02/07/lace-transfers/
+        This would requre some changes to the code structure and is not reccomended for assignment 2.
         :param parent_loops_to_needles: parent loops mapped to their current needle
         :param decrease_offsets: the offsets of parent loops to create decreases
         """
-        negative_xfer_to_back: Dict[Needle, Tuple[None, Needle]] = {}
-        negative_xfer_to_front: Dict[Needle, Tuple[None, Needle]] = {}
-        positive_xfer_to_back: Dict[Needle, Tuple[None, Needle]] = {}
-        positive_xfer_to_front: Dict[Needle, Tuple[None, Needle]] = {}
+        xfers_to_holding_bed: Dict[Needle, Tuple[None, Needle]] = {}
+        # key needles currently holding the loops to the opposite needle to hold them for offset-xfers
+        offset_to_xfers_to_target: Dict[int, Dict[Needle, Tuple[None, Needle]]] = {}
+        # key offset values (-N...0..N) to starting needles to their target needle
         for parent_id, parent_needle in parent_loops_to_needles.items():
-            if parent_id in decrease_offsets:
-                front_needle = Needle(is_front=True, position=parent_needle.position)
-                back_needle = front_needle.opposite()
+            if parent_id in decrease_offsets:  # this loop is involved in a decrease
                 offset = decrease_offsets[parent_id]
-                if offset < 0:
-                    if parent_needle.is_front:
-                        negative_xfer_to_back[front_needle] = None, back_needle
-                    offset_needle = parent_needle.offset(offset)
-                    negative_xfer_to_front[back_needle] = None, offset_needle
-                elif offset > 0:
-                    if parent_needle.is_front:
-                        positive_xfer_to_back[front_needle] = None, back_needle
-                    offset_needle = parent_needle.offset(offset)
-                    positive_xfer_to_front[back_needle] = None, offset_needle
+                offset_needle = parent_needle.offset(offset)
+                holding_needle = parent_needle.opposite()
+                xfers_to_holding_bed[parent_needle] = (None, holding_needle)
+                if offset not in offset_to_xfers_to_target:
+                    offset_to_xfers_to_target[offset] = {}
+                offset_to_xfers_to_target[offset][holding_needle] = (None, offset_needle)
 
-        carriage_pass = Carriage_Pass(Instruction_Type.Xfer, None, negative_xfer_to_back, [], self._machine_state)
-        self._add_carriage_pass(carriage_pass, "decrease negative-offsets to back")
-        carriage_pass = Carriage_Pass(Instruction_Type.Xfer, None, negative_xfer_to_front, [], self._machine_state)
-        self._add_carriage_pass(carriage_pass, "decrease negative-offsets to front")
-        carriage_pass = Carriage_Pass(Instruction_Type.Xfer, None, positive_xfer_to_back, [], self._machine_state)
-        self._add_carriage_pass(carriage_pass, "decrease positive-offsets to back")
-        carriage_pass = Carriage_Pass(Instruction_Type.Xfer, None, positive_xfer_to_front, [], self._machine_state)
-        self._add_carriage_pass(carriage_pass, "decrease positive-offsets to front")
+        carriage_pass = Carriage_Pass(Instruction_Type.Xfer, None, xfers_to_holding_bed, [], self._machine_state)
+        self._add_carriage_pass(carriage_pass, "send loops to decrease to back")
+        for offset in sorted(offset_to_xfers_to_target.keys()):
+            offset_xfers = offset_to_xfers_to_target[offset]
+            carriage_pass = Carriage_Pass(Instruction_Type.Xfer, None, offset_xfers, [], self._machine_state)
+            self._add_carriage_pass(carriage_pass, f"stack decreases with offset {offset}")
 
     def _do_knit_purl_xfers(self, loop_id_to_target_needle: Dict[int, Needle]):
         """

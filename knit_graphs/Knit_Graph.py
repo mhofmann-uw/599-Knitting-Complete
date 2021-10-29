@@ -23,6 +23,12 @@ class Pull_Direction(Enum):
         else:
             return Pull_Direction.BtF
 
+    def __str__(self):
+        return self.value
+
+    def __repr__(self):
+        return self.value
+
 
 class Knit_Graph:
     """

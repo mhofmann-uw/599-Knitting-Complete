@@ -108,7 +108,13 @@ class Carriage_Pass:
 
     def _write_instruction(self, needle: Needle, loop_id: Optional[int],
                            second_needle: Optional[Needle], comment="") -> str:
-
+        """
+        :param needle: the first (or only) needle that an instruction uses
+        :param loop_id: the loop involved in the operation (used for making comments)
+        :param second_needle: the second needle involved in the instructions (i.e., to transfer to
+        :param comment: Any specific comments to be included with this instruction
+        :return: The string for the line of code executing the instruction
+        """
         if self.instruction_type.value == Instruction_Type.Knit.value:
             assert loop_id is not None, "Cannot knit null loop"
             return knit(self.machine_state, self.direction, needle, self.carrier_set, loop_id, comment=comment)
@@ -136,7 +142,6 @@ class Carriage_Pass:
         :param comment: A comment to add to every instruction in the pass
         :return: A list of knitout instructions that executes the instruction on each needle
         """
-
         # bring in yarns that are not yet in operation
         instructions = []
         in_hooked_carriers = set()

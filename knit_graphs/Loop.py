@@ -19,7 +19,7 @@ class Loop:
         """
         :param loop_id: id of loop. IDs should represent the order that loops are created
             with the first loop being created with id 0
-        :param is_twisted: True if the loop should be twisted
+        :param is_twisted: True if the loop should be twistedpa
             (created by pulling a carrier backwards across the needle)
         """
         self.is_twisted = is_twisted
@@ -109,7 +109,7 @@ class Loop:
             twisted = ", twisted"
         else:
             twisted = ""
-        return f"{self.loop_id} on yarn {self.loop_id}{twisted}"
+        return f"{self.loop_id} on yarn {self.yarn_id}{twisted}"
 
     def __repr__(self):
         return str(self)

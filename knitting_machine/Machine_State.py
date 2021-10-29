@@ -79,10 +79,7 @@ class Needle:
             return f"b{self.position + 1}"
 
     def __repr__(self):
-        if self.is_front:
-            return f"f{self.position}"
-        else:
-            return f"b{self.position}"
+        return str(self)
 
     def __hash__(self):
         return self.position
@@ -98,7 +95,15 @@ class Needle:
 
 class Machine_Bed:
     """
-    A structure to hold information about loops held on one bed of needles
+    A structure to hold information about loops held on one bed of needles...
+
+    Attributes
+    ----------
+    held_loops : Dict[int, List[int]
+        a dictionary keyed by needle positions to the stack of loops on the needle
+    loops_to_needle: Dict[int, Optional[int]]
+        A dictionary keyed by loop ids to the needle location that this loop is currently held at.
+         If it is not held this is None or non-existant
     """
 
     def __init__(self, is_front: bool, needle_count: int = 250):
@@ -179,8 +184,16 @@ class Yarn_Carrier:
         :param position: the current needle position the carriage last stitched on
         :param carrier_id: The carrier_id for this yarn
         """
+        assert 1 <= carrier_id <= 10, "Carriers must between 1 and 10"
         self._carrier_id: int = carrier_id
-        self.position: int = position
+        self._position: int = position
+
+    @property
+    def position(self):
+        """
+        :return: The current needle position the carrier is sitting at
+        """
+        return self._position
 
     @property
     def carrier_id(self) -> int:
@@ -194,7 +207,7 @@ class Yarn_Carrier:
         Updates the structure as though the yarn carrier took a pass at the needle location
         :param new_position: the needle to move to
         """
-        self.position = new_position
+        self._position = new_position
 
     def __str__(self):
         return str(self.carrier_id)
@@ -206,6 +219,22 @@ class Yarn_Carrier:
 class Machine_State:
     """
     The current state of a whole V-bed knitting machine
+    ...
+
+    Attributes
+    ----------
+    racking: int
+        The current racking of the machine: R = f-b
+    front_bed: Machine_Bed
+        The status of needles on the front bed
+    back_bed: Machine_Bed
+        The status of needles on the back bed
+    last_carriage_direction: Pass_Direction
+        the last direction the carriage took, used to infer the current position of the carriage (left or right)
+    in_hooks: Set[Yarn_Carrier]
+        The set of yarn carriers that are currently hooked on the machine and active
+    yarns_in_operation: Set[Yarn_Carrier]
+        The current yarns that being knit with and have not been cut, may also be hooked
     """
 
     def __init__(self, needle_count: int = 250, racking: int = 0):

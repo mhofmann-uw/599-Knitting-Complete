@@ -97,13 +97,13 @@ def split(machine_state: Machine_State, direction: Pass_Direction, needle_1: Nee
     :param comment: additional details to document in the knitout
     :return: the split instruction
     """
-    front_to_back, racking = prepare_xfer(machine_state, needle_1, needle_2)
+    front_to_back, racking = _prepare_xfer(machine_state, needle_1, needle_2)
     machine_state.add_loop(loop_id, needle_1.position, on_front=front_to_back, carrier_set=carrier_set)
     carriers = make_carrier_set(carrier_set, needle_1)
     return f"{racking}split {direction} {needle_1} {needle_2}{carriers} ; split loop {loop_id}, {comment}\n"
 
 
-def prepare_xfer(machine_state, needle_1, needle_2) -> Tuple[bool, str]:
+def _prepare_xfer(machine_state, needle_1, needle_2) -> Tuple[bool, str]:
     """
     :param machine_state: the current machine model to update
     :param needle_1: the first needle to xfer from
@@ -151,7 +151,7 @@ def xfer(machine_state: Machine_State, needle_1: Needle, needle_2: Needle, comme
     :param comment: additional details to document in the knitout
     :return: the xfer instruction
     """
-    _, racking = prepare_xfer(machine_state, needle_1, needle_2)
+    _, racking = _prepare_xfer(machine_state, needle_1, needle_2)
     return f"{racking}xfer {needle_1} {needle_2} ;{comment}\n"
 
 
