@@ -1,6 +1,7 @@
 from debugging_tools.knit_graph_viz import visualize_knitGraph
 
 from knitspeak_compiler.knitspeak_compiler import Knitspeak_Compiler
+from knitting_machine.knitgraph_to_knitout import Knitout_Generator
 
 
 def test_stst():
@@ -8,6 +9,9 @@ def test_stst():
     compiler = Knitspeak_Compiler()
     knit_graph = compiler.compile(4, 4, pattern)
     visualize_knitGraph(knit_graph, "stst.html")
+    generator = Knitout_Generator(knit_graph)
+    generator.write_instructions(f"stst.k")
+
 
 
 def test_rib():
@@ -47,6 +51,13 @@ def test_write_slipped_rib():
     knit_graph = compiler.compile(6, 3, pattern)
     visualize_knitGraph(knit_graph, "slipped_rib.html")
 
+def test_write_slipped_rib_even():
+    rib_width =1
+    pattern = f" all rs rows k rib={rib_width}, p rib. all ws rows slip rib, p rib."
+    compiler = Knitspeak_Compiler()
+    knit_graph = compiler.compile(4, 5, pattern)
+    visualize_knitGraph(knit_graph, "slipped_rib.html")
+
 
 def test_write_short_rows():
     pattern = r"""
@@ -63,9 +74,9 @@ def test_write_short_rows():
     visualize_knitGraph(knit_graph, "short_rows.html")
 
 
-if __name__ == "__main__":
-    test_stst()
-    test_rib()
-    test_write_slipped_rib()
-    test_cable()
-    test_lace()
+# if __name__ == "__main__":
+#     test_stst()
+#     test_rib()
+#     test_write_slipped_rib()
+#     test_cable()
+#     test_lace()

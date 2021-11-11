@@ -4,9 +4,10 @@ from knitting_machine.knitgraph_to_knitout import Knitout_Generator
 
 
 def test_stst():
-    knitGraph = stockinette(20, 10)
+    carrier = 2
+    knitGraph = stockinette(20, 20, carrier=carrier)
     generator = Knitout_Generator(knitGraph)
-    generator.write_instructions("test_stst.k")
+    generator.write_instructions(f"stst_{carrier}.k")
 
 
 def test_rib():

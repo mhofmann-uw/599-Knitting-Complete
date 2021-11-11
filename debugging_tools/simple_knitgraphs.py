@@ -3,14 +3,15 @@ from knit_graphs.Knit_Graph import Knit_Graph, Pull_Direction
 from knit_graphs.Yarn import Yarn
 
 
-def stockinette(width: int = 4, height: int = 4) -> Knit_Graph:
+def stockinette(width: int = 4, height: int = 4, carrier:int=3) -> Knit_Graph:
     """
+    :param carrier:
     :param width: the number of stitches of the swatch
     :param height:  the number of courses of the swatch
     :return: a knitgraph of stockinette on one yarn of width stitches by height course
     """
     knitGraph = Knit_Graph()
-    yarn = Yarn("yarn", knitGraph, carrier_id=3)
+    yarn = Yarn("yarn", knitGraph, carrier_id=carrier)
     knitGraph.add_yarn(yarn)
     first_row = []
     for _ in range(0, width):

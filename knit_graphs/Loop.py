@@ -52,6 +52,7 @@ class Loop:
         :return: the id of the loop that comes before this in the knitgraph
         """
         prior_id = self.loop_id - 1
+        #todo, update to iterate through prior ids untill it has the next one, assuming the graph can have loops removed
         if knitGraph.graph.has_node(prior_id):
             return prior_id
         else:

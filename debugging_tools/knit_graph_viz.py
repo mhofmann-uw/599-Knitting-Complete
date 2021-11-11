@@ -13,7 +13,7 @@ def visualize_knitGraph(knit_graph: Knit_Graph, display_name: str = "nx.html", h
     :param width: the width of the html window
     """
     network = nw.Network(f'{height}px', f'{width}px', layout=True, directed=True)
-    network.toggle_physics(False)
+    network.toggle_physics(True)
     network.options.layout.hierarchical.enabled = True
     network.options.layout.hierarchical.direction = "LR"  # make the stitches start at the bottom
     # LR, RL, UD, DU

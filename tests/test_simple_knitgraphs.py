@@ -25,10 +25,10 @@ def test_lace():
 
 if __name__ == "__main__":
     test_stockinette()
-    test_rib()
-    test_seed()
-    test_twisted_stripes()
-    test_lace()
+    # test_rib()
+    # test_seed()
+    # test_twisted_stripes()
+    # test_lace()
 
 
 def test_short_rows():
