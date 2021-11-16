@@ -65,7 +65,7 @@ class Needle:
         """
         return Needle(is_front=not self.is_front, position=self.position)
 
-    def offset(self, offset:int):
+    def offset(self, offset: int):
         """
         :param offset: the amount to offset the needle from
         :return: the needle offset spaces away on the same bed
@@ -178,14 +178,18 @@ class Yarn_Carrier:
     A structure to represent the location of a Yarn_carrier
     """
 
-    def __init__(self, carrier_id: int = 3, position: int = -1):
+    def __init__(self, carrier_ids: Union[int, List[int]] = 3, position: int = -1):
         """
         Represents the state of the yarn_carriage
         :param position: the current needle position the carriage last stitched on
-        :param carrier_id: The carrier_id for this yarn
+        :param carrier_ids: The carrier_id for this yarn
         """
-        assert 1 <= carrier_id <= 10, "Carriers must between 1 and 10"
-        self._carrier_id: int = carrier_id
+        self._carrier_ids: Union[int, List[int]] = carrier_ids
+        if self.many_yarns:
+            for carrier in self.carrier_ids:
+                assert 1 <= carrier <= 10, "Carriers must between 1 and 10"
+        else:
+            assert 1 <= carrier_ids <= 10, "Carriers must between 1 and 10"
         self._position: int = position
 
     @property
@@ -196,11 +200,11 @@ class Yarn_Carrier:
         return self._position
 
     @property
-    def carrier_id(self) -> int:
+    def carrier_ids(self) -> Union[int, List[int]]:
         """
         :return: the id of this carrier
         """
-        return self._carrier_id
+        return self._carrier_ids
 
     def move_to_position(self, new_position: int):
         """
@@ -209,11 +213,49 @@ class Yarn_Carrier:
         """
         self._position = new_position
 
+    @property
+    def many_yarns(self) -> bool:
+        """
+        :return: True if this carrier involves multiple carriers
+        """
+        return type(self.carrier_ids) == list
+
+    def not_in_operation(self, machine_state) -> list:
+        not_in_operation = []
+        for carrier_id in self:
+            carrier = Yarn_Carrier(carrier_id)
+            if carrier not in machine_state.yarns_in_operation:
+                not_in_operation.append(carrier)
+        return not_in_operation
+
     def __str__(self):
-        return str(self.carrier_id)
+        if not self.many_yarns:
+            return " " + str(self.carrier_ids)
+        else:
+            carriers = ""
+            for carrier in self.carrier_ids:
+                carriers += f" {carrier}"
+            return carriers
 
     def __hash__(self):
-        return self.carrier_id
+        if self.many_yarns:
+            hash_val = 0
+            for i, carrier in enumerate(self.carrier_ids):
+                hash_val += (10 ** i) * carrier  # gives unique hash for list of different orders
+            return hash_val
+        else:
+            return self.carrier_ids
+
+    def __eq__(self, other):
+        if isinstance(other, Yarn_Carrier):
+            return hash(self) == hash(other)
+        return False
+
+    def __iter__(self):
+        if self.many_yarns:
+            return iter(self.carrier_ids)
+        else:
+            return iter([self.carrier_ids])
 
 
 class Machine_State:
@@ -237,13 +279,13 @@ class Machine_State:
         The current yarns that being knit with and have not been cut, may also be hooked
     """
 
-    def __init__(self, needle_count: int = 250, racking: int = 0):
+    def __init__(self, needle_count: int = 250, racking: float = 0):
         """
         Maintains the state of the machine
         :param needle_count:the number of needles that are on this bed
         :param racking:the current racking between the front and back bed: r=f-b
         """
-        self.racking: int = racking
+        self.racking: float = racking
         self.front_bed: Machine_Bed = Machine_Bed(is_front=True, needle_count=needle_count)
         self.back_bed: Machine_Bed = Machine_Bed(is_front=False, needle_count=needle_count)
         self.last_carriage_direction: Pass_Direction = Pass_Direction.Left_to_Right
@@ -271,7 +313,12 @@ class Machine_State:
         Declares that the yarn is no longer in service, will need to be in-hooked to use
         :param yarn_carrier: the yarn carrier to remove from service
         """
-        self.yarns_in_operation.remove(yarn_carrier)
+        if yarn_carrier in self.yarns_in_operation:
+            self.yarns_in_operation.remove(yarn_carrier)
+        for sub_carrier_id in yarn_carrier:
+            sub_carrier = Yarn_Carrier(sub_carrier_id)
+            if sub_carrier in self.yarns_in_operation:
+                self.yarns_in_operation.remove(sub_carrier)
 
     def switch_carriage_direction(self):
         """
@@ -286,7 +333,7 @@ class Machine_State:
         """
         return self.front_bed.needle_count
 
-    def add_loop(self, loop_id: int, needle_position: int, on_front: bool, carrier_set: List[Yarn_Carrier], drop_prior_loops: bool = True):
+    def add_loop(self, loop_id: int, needle_position: int, on_front: bool, carrier_set: Optional[Yarn_Carrier] = None, drop_prior_loops: bool = True):
         """
         Puts the loop_id on given needle, overrides existing loops as if a knit operation took place
         :param carrier_set: the set  of yarns making this loop
@@ -295,8 +342,7 @@ class Machine_State:
         :param needle_position: the position of the needle
         :param on_front: True if the loop is added to front bed, false if added to the back bed
         """
-        for carrier in carrier_set:
-            assert carrier in self.yarns_in_operation, f"{carrier} not in operation"
+        assert len(carrier_set.not_in_operation(self)) == 0, f"{carrier_set} not in operation"
         if on_front:
             self.front_bed.add_loop(loop_id, needle_position, drop_prior_loops)
         else:
@@ -325,14 +371,14 @@ class Machine_State:
             front_loops = self[(starting_pos, True)]
             assert len(front_loops) > 0, f"No loop at f{starting_pos}"
             for front_loop in front_loops:
-                self.add_loop(front_loop, ending_pos, on_front=False, carrier_set=[], drop_prior_loops=False)
+                self.add_loop(front_loop, ending_pos, on_front=False, drop_prior_loops=False)
             self.drop_loop(starting_pos, on_front=True)
         else:
             assert self.valid_rack(ending_pos, starting_pos), f"racking {self.racking} does not match b{starting_pos} to f{ending_pos}"
             back_loops = self[(starting_pos, False)]
             assert len(back_loops) > 0, f"No loop at b{starting_pos}"
             for back_loop in back_loops:
-                self.add_loop(back_loop, ending_pos, on_front=True, carrier_set=[], drop_prior_loops=False)
+                self.add_loop(back_loop, ending_pos, on_front=True, drop_prior_loops=False)
             self.drop_loop(starting_pos, on_front=False)
 
     def update_rack(self, front_pos: int, back_pos: int) -> Tuple[int, bool]:
