@@ -43,8 +43,6 @@ class Instruction_Parameters:
         self._needle_1: Needle = needle_1
         self._involved_loop: Optional[int] = involved_loop
         self._needle_2: Optional[Needle] = needle_2
-        if carrier is None:
-            carrier = []
         self._carrier: Optional[Yarn_Carrier] = carrier
         self._comment: str = comment
 

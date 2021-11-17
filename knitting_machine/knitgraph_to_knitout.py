@@ -40,7 +40,7 @@ class Knitout_Generator:
                 course_loops = self._courses_to_loop_ids[course]
                 self._knit_row(course_loops, pass_direction, course)
                 pass_direction = pass_direction.opposite()
-        self._instructions.append(outhook(self._machine_state, [self._carrier]))
+        self._instructions.append(outhook(self._machine_state, self._carrier))
         self._drop_loops()
 
     def _drop_loops(self):
@@ -71,7 +71,7 @@ class Knitout_Generator:
         Does a standard alternating tuck cast on then 2 stabilizing knit rows
         """
         first_course_loops = self._courses_to_loop_ids[self._sorted_courses[0]]
-        carrier_set = [self._carrier]
+        carrier_set = self._carrier
         even_tucks_data: Dict[Needle, Instruction_Parameters] = {}
         odd_tucks_data: Dict[Needle, Instruction_Parameters] = {}
         for needle_pos in range(0, len(first_course_loops)):
@@ -110,7 +110,7 @@ class Knitout_Generator:
         :param direction: the direction that the loops will be knit in
         :param course_number: the course identifier for comments only
         """
-        carrier_set = [self._carrier]
+        carrier_set = self._carrier
         loop_id_to_target_needle = self._do_xfers_for_row(loop_ids, direction)
         knit_data: Dict[Needle, Instruction_Parameters] = {}
         for loop_id, target_needle in loop_id_to_target_needle.items():

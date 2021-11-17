@@ -263,6 +263,86 @@ def test_birdseye():
     _write_instructions("birdseye.k", instructions)
 
 
+def test_birdseye_3():
+    c1 = Yarn_Carrier(3)
+    c2 = Yarn_Carrier(4)
+    c3 = Yarn_Carrier(5)
+    carriage_passes, instructions, machine_state = _cast_on(c1, c2, double=True)
+    instructions.append(rack(machine_state, .25))  # rack for all needle knitting
+    for row in range(0, 20):
+        c1_knits = {}
+        c2_knits = {}
+        c3_knits = {}
+        if row % 2 == 0:
+            for n in range(19, 14, -1):
+                front_needle = Needle(True, n)
+                back_needle = Needle(False, n)
+                c1_knits[front_needle] = Instruction_Parameters(front_needle, involved_loop=-1, carrier=c1)
+                if n % 2 == 1:
+                    c1_knits[back_needle] = Instruction_Parameters(back_needle, involved_loop=-1, carrier=c1)
+                else:
+                    c2_knits[back_needle] = Instruction_Parameters(back_needle, involved_loop=-1, carrier=c2)
+                    c3_knits[back_needle] = Instruction_Parameters(back_needle, involved_loop=-1, carrier=c3)
+            for n in range(14, 4, -1):
+                front_needle = Needle(True, n)
+                back_needle = Needle(False, n)
+                c2_knits[front_needle] = Instruction_Parameters(front_needle, involved_loop=-1, carrier=c2)
+                if n % 2 == 1:
+                    c1_knits[back_needle] = Instruction_Parameters(back_needle, involved_loop=-1, carrier=c1)
+                else:
+                    c2_knits[back_needle] = Instruction_Parameters(back_needle, involved_loop=-1, carrier=c2)
+                    c3_knits[back_needle] = Instruction_Parameters(back_needle, involved_loop=-1, carrier=c3)
+            for n in range(4, -1, -1):
+                front_needle = Needle(True, n)
+                back_needle = Needle(False, n)
+                c3_knits[front_needle] = Instruction_Parameters(front_needle, involved_loop=-1, carrier=c3)
+                if n % 2 == 1:
+                    c1_knits[back_needle] = Instruction_Parameters(back_needle, involved_loop=-1, carrier=c1)
+                else:
+                    c2_knits[back_needle] = Instruction_Parameters(back_needle, involved_loop=-1, carrier=c2)
+                    c3_knits[back_needle] = Instruction_Parameters(back_needle, involved_loop=-1, carrier=c3)
+            _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, Pass_Direction.Right_to_Left, c1_knits, machine_state), carriage_passes, instructions)
+            _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, Pass_Direction.Right_to_Left, c2_knits, machine_state), carriage_passes, instructions)
+            _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, Pass_Direction.Right_to_Left, c3_knits, machine_state), carriage_passes, instructions)
+        else:
+            for n in range(0, 5):
+                front_needle = Needle(True, n)
+                back_needle = Needle(False, n)
+                c1_knits[front_needle] = Instruction_Parameters(front_needle, involved_loop=-1, carrier=c1)
+                if n % 2 == 0:
+                    c1_knits[back_needle] = Instruction_Parameters(back_needle, involved_loop=-1, carrier=c1)
+                else:
+                    c2_knits[back_needle] = Instruction_Parameters(back_needle, involved_loop=-1, carrier=c2)
+                    c3_knits[back_needle] = Instruction_Parameters(back_needle, involved_loop=-1, carrier=c3)
+            for n in range(5, 15):
+                front_needle = Needle(True, n)
+                back_needle = Needle(False, n)
+                c2_knits[front_needle] = Instruction_Parameters(front_needle, involved_loop=-1, carrier=c2)
+                if n % 2 == 0:
+                    c1_knits[back_needle] = Instruction_Parameters(back_needle, involved_loop=-1, carrier=c1)
+                else:
+                    c2_knits[back_needle] = Instruction_Parameters(back_needle, involved_loop=-1, carrier=c2)
+                    c3_knits[back_needle] = Instruction_Parameters(back_needle, involved_loop=-1, carrier=c3)
+            for n in range(15, 20):
+                front_needle = Needle(True, n)
+                back_needle = Needle(False, n)
+                c3_knits[front_needle] = Instruction_Parameters(front_needle, involved_loop=-1, carrier=c3)
+                if n % 2 == 0:
+                    c1_knits[back_needle] = Instruction_Parameters(back_needle, involved_loop=-1, carrier=c1)
+                else:
+                    c2_knits[back_needle] = Instruction_Parameters(back_needle, involved_loop=-1, carrier=c2)
+                    c3_knits[back_needle] = Instruction_Parameters(back_needle, involved_loop=-1, carrier=c3)
+            _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, Pass_Direction.Left_to_Right, c1_knits, machine_state), carriage_passes, instructions)
+            _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, Pass_Direction.Left_to_Right, c2_knits, machine_state), carriage_passes, instructions)
+            _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, Pass_Direction.Left_to_Right, c3_knits, machine_state), carriage_passes, instructions)
+
+    instructions.append(outhook(machine_state, c1))
+    instructions.append(outhook(machine_state, c2))
+    instructions.append(outhook(machine_state, c3))
+
+    _write_instructions("birdseye-3.k", instructions)
+
+
 def test_double_jersey():
     c1 = Yarn_Carrier(3)
     carriage_passes, instructions, machine_state = _cast_on(c1, c1, double=True)

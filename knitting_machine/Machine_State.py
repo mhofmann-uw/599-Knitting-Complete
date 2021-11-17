@@ -342,7 +342,8 @@ class Machine_State:
         :param needle_position: the position of the needle
         :param on_front: True if the loop is added to front bed, false if added to the back bed
         """
-        assert len(carrier_set.not_in_operation(self)) == 0, f"{carrier_set} not in operation"
+        if carrier_set is not None:
+            assert len(carrier_set.not_in_operation(self)) == 0, f"{carrier_set} not in operation"
         if on_front:
             self.front_bed.add_loop(loop_id, needle_position, drop_prior_loops)
         else:
