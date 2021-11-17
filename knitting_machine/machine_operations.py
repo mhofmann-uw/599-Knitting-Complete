@@ -1,12 +1,13 @@
 """
 Methods and support for writing knitout commands and updating a machine state
 """
-from typing import List, Tuple, Optional
+import math
+from typing import Tuple, Optional
 
 from knitting_machine.Machine_State import Machine_State, Yarn_Carrier, Pass_Direction, Needle
 
 
-def rack(machine_state: Machine_State, racking: int, comment: str = "") -> str:
+def rack(machine_state: Machine_State, racking: float, comment: str = "") -> str:
     """
     :param machine_state: the current machine model to update
     :param racking: the new racking to set the machine to
@@ -14,24 +15,23 @@ def rack(machine_state: Machine_State, racking: int, comment: str = "") -> str:
     :return: the racking instruction
     """
     machine_state.racking = racking
+    if racking != .25 and racking != -.75:  # racking for all needle knitting
+        racking = math.floor(racking)
     return f"rack {racking} ;{comment}\n"
 
 
-def make_carrier_set(carrier_set: List[Yarn_Carrier], needle: Optional[Needle] = None) -> str:
+def make_carrier_set(carrier: Yarn_Carrier, needle: Optional[Needle] = None) -> str:
     """
-    :param carrier_set: the set of carriers to be converted to a carrier set command parameter
+    :param carrier: the set of carriers to be converted to a carrier set command parameter
     :param needle: the needle to move the carriers to
     :return: the spaced carrier set parameter to be used in instructions
     """
-    carriers = ""
-    for carrier in carrier_set:
-        carriers += f" {carrier}"
-        if needle is not None:
-            carrier.move_to_position(needle.position)
-    return carriers
+    if needle is not None:
+        carrier.move_to_position(needle.position)
+    return str(carrier)
 
 
-def miss(direction: Pass_Direction, needle: Needle, carrier_set: List[Yarn_Carrier], comment: str = "") -> str:
+def miss(direction: Pass_Direction, needle: Needle, carrier_set: Yarn_Carrier, comment: str = "") -> str:
     """
     Move the specified carriers as if they had just formed a loop in direction D at location N.
     (Not generally needed, used when performing explicit kickbacks or purposeful yarn capture.)
@@ -45,7 +45,7 @@ def miss(direction: Pass_Direction, needle: Needle, carrier_set: List[Yarn_Carri
     return f"miss {direction} {needle}{carriers} ;{comment}\n"
 
 
-def knit(machine_state: Machine_State, direction: Pass_Direction, needle: Needle, carrier_set: List[Yarn_Carrier],
+def knit(machine_state: Machine_State, direction: Pass_Direction, needle: Needle, carrier_set: Yarn_Carrier,
          loop_id: int, comment: str = ""):
     """
     Pull a loop formed in direction D by the yarns in carriers CS through the loops on needle N,
@@ -64,7 +64,7 @@ def knit(machine_state: Machine_State, direction: Pass_Direction, needle: Needle
     return f"knit {direction} {needle}{carriers} ; knit loop {loop_id}, {comment}\n"
 
 
-def tuck(machine_state: Machine_State, direction: Pass_Direction, needle: Needle, carrier_set: List[Yarn_Carrier],
+def tuck(machine_state: Machine_State, direction: Pass_Direction, needle: Needle, carrier_set: Yarn_Carrier,
          loop_id: int, comment: str = "") -> str:
     """
     Add a loop formed in direction D by the yarns held by carriers in CS to those already on needle N.
@@ -83,7 +83,7 @@ def tuck(machine_state: Machine_State, direction: Pass_Direction, needle: Needle
 
 
 def split(machine_state: Machine_State, direction: Pass_Direction, needle_1: Needle, needle_2,
-          carrier_set: List[Yarn_Carrier], loop_id: int, comment: str = "") -> str:
+          carrier_set: Yarn_Carrier, loop_id: int, comment: str = "") -> str:
     """
     Pull a loop formed in direction D by the yarns in carriers CS through the loops on needle N,
     transferring the old loops to opposite-bed needle N2 in the process.
@@ -155,7 +155,7 @@ def xfer(machine_state: Machine_State, needle_1: Needle, needle_2: Needle, comme
     return f"{racking}xfer {needle_1} {needle_2} ;{comment}\n"
 
 
-def inhook(machine_state: Machine_State, carrier_set: List[Yarn_Carrier], comment: str = "") -> str:
+def inhook(machine_state: Machine_State, carrier_set: Yarn_Carrier, comment: str = "") -> str:
     """
     Indicate that the given carrier set should be brought into action using the yarn inserting hook when next used.
     The inserting hook will be parked just before the first stitch made with the carriers.
@@ -164,12 +164,11 @@ def inhook(machine_state: Machine_State, carrier_set: List[Yarn_Carrier], commen
     :param comment: additional details to document in the knitout
     :return: the inhook instruction
     """
-    for carrier in carrier_set:
-        machine_state.in_hook(carrier)
+    machine_state.in_hook(carrier_set)
     return f"inhook {make_carrier_set(carrier_set)} ;{comment}\n"
 
 
-def releasehook(machine_state: Machine_State, carrier_set: List[Yarn_Carrier], comment: str = "") -> str:
+def releasehook(machine_state: Machine_State, carrier_set: Yarn_Carrier, comment: str = "") -> str:
     """
     Release the yarns currently held in the yarn inserting hook.
     Must be proceeded by a call to inhook with the same carrier set and at least one knitting operation.
@@ -178,12 +177,11 @@ def releasehook(machine_state: Machine_State, carrier_set: List[Yarn_Carrier], c
     :param comment: additional details to document in the knitout
     :return: the releasehook instruction
     """
-    for carrier in carrier_set:
-        machine_state.release_hook(carrier)
+    machine_state.release_hook(carrier_set)
     return f"releasehook {make_carrier_set(carrier_set)} ;{comment}\n"
 
 
-def outhook(machine_state: Machine_State, carrier_set: List[Yarn_Carrier], comment: str = "") -> str:
+def outhook(machine_state: Machine_State, carrier_set: Yarn_Carrier, comment: str = "") -> str:
     """
     Release the yarns currently held in the yarn inserting hook.
     Must be proceeded by a call to inhook with the same carrier set and at least one knitting operation.
@@ -192,6 +190,5 @@ def outhook(machine_state: Machine_State, carrier_set: List[Yarn_Carrier], comme
     :param comment: additional details to document in the knitout
     :return: the outhook instruction
     """
-    for carrier in carrier_set:
-        machine_state.out_hook(carrier)
+    machine_state.out_hook(carrier_set)
     return f"outhook {make_carrier_set(carrier_set)} ;{comment}\n"

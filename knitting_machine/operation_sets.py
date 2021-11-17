@@ -1,6 +1,6 @@
 """Sets of Operations that happen in groups of carriage passes"""
 from enum import Enum
-from typing import Optional, Dict
+from typing import Optional, Dict, Set, List
 
 from knitting_machine.Machine_State import Needle
 from knitting_machine.machine_operations import *
@@ -37,6 +37,65 @@ class Instruction_Type(Enum):
         return self.value == Instruction_Type.Xfer.value
 
 
+class Instruction_Parameters:
+    def __init__(self, needle_1: Needle, involved_loop: Optional[int] = None, needle_2: Optional[Needle] = None, carrier: Optional[Yarn_Carrier] = None,
+                 comment: str = ""):
+        self._needle_1: Needle = needle_1
+        self._involved_loop: Optional[int] = involved_loop
+        self._needle_2: Optional[Needle] = needle_2
+        self._carrier: Optional[Yarn_Carrier] = carrier
+        self._comment: str = comment
+
+    @property
+    def carrier(self) -> Optional[Yarn_Carrier]:
+        return self._carrier
+
+    @property
+    def no_yarn(self) -> bool:
+        return self.carrier is None
+
+    @property
+    def comment(self):
+        return self._comment
+
+    @comment.setter
+    def comment(self, comment: str):
+        self._comment = comment
+
+    def miss(self, direction: Pass_Direction):
+        assert self._needle_1 is not None, "No Miss needle provided."
+        assert self.no_yarn, "No carrier to miss"
+        return miss(direction, self._needle_1, self._carrier, self.comment)
+
+    def knit(self, machine_state: Machine_State, direction: Pass_Direction):
+        assert self._needle_1 is not None, "No Needle to knit on"
+        assert self._involved_loop is not None, "No loop_id provided"
+        return knit(machine_state, direction, self._needle_1, self._carrier, self._involved_loop, self.comment)
+
+    def tuck(self, machine_state: Machine_State, direction: Pass_Direction):
+        assert self._needle_1 is not None, "No Needle to tuck on"
+        assert self._involved_loop is not None, "No loop_id provided"
+        return tuck(machine_state, direction, self._needle_1, self._carrier, self._involved_loop, self.comment)
+
+    def split(self, machine_state: Machine_State, direction: Pass_Direction):
+        assert self._needle_1 is not None, "No Needle to split from"
+        assert self._needle_2 is not None, "No Needle to split to"
+        assert self._involved_loop is not None, "No loop_id provided"
+        return split(machine_state, direction, self._needle_1, self._needle_2, self._carrier, self._involved_loop, self.comment)
+
+    def drop(self, machine_state: Machine_State):
+        assert self._needle_1 is not None, "No Needle to tuck on"
+        return drop(machine_state, self._needle_1, self.comment)
+
+    def xfer(self, machine_state: Machine_State):
+        assert self._needle_1 is not None, "No Needle to split from"
+        assert self._needle_2 is not None, "No Needle to split to"
+        return xfer(machine_state, self._needle_1, self._needle_2, self.comment)
+
+    def __hash__(self):
+        return hash(self._needle_1)
+
+
 class Carriage_Pass:
     """
     A class that represents a set of instructions made in one pass of the carriage
@@ -52,21 +111,22 @@ class Carriage_Pass:
     """
 
     def __init__(self, instruction_type: Instruction_Type, direction: Optional[Pass_Direction],
-                 needles_to_instruction_parameters: Dict[Needle, Tuple[Optional[int], Optional[Needle]]],
-                 carrier_set: List[Yarn_Carrier],
+                 needles_to_instruction_parameters: Dict[Needle, Instruction_Parameters],
                  machine_state: Machine_State):
         """
         :param instruction_type: The type of instruction to be done in this pass
         :param direction: the direction the carriage will move for this pass
         :param needles_to_instruction_parameters:
             The starting needles mapped to the loop_id created and a second needle to xfer
-        :param carrier_set: The set of yarn carriers involved in each instruction
         :param machine_state: The machine model to update as instructions are written
         """
         self.machine_state: Machine_State = machine_state
-        self._carrier_set: List[Yarn_Carrier] = carrier_set
+        self._carrier_set: Set[Yarn_Carrier] = set()
         self.needles_to_instruction_parameters: \
-            Dict[Needle, Tuple[Optional[int], Optional[Needle]]] = needles_to_instruction_parameters
+            Dict[Needle, Instruction_Parameters] = needles_to_instruction_parameters
+        for params in self.needles_to_instruction_parameters.values():
+            if not params.no_yarn:
+                self._carrier_set.add(params.carrier)
         self._direction = direction
         self._instruction_type: Instruction_Type = instruction_type
         if self.direction is None:
@@ -92,7 +152,7 @@ class Carriage_Pass:
         return self._direction
 
     @property
-    def carrier_set(self) -> List[Yarn_Carrier]:
+    def carrier_set(self) -> Set[Yarn_Carrier]:
         """
         :return: the set of carriers involved in these instructions
         """
@@ -106,33 +166,23 @@ class Carriage_Pass:
         else:
             return sorted_left_to_right
 
-    def _write_instruction(self, needle: Needle, loop_id: Optional[int],
-                           second_needle: Optional[Needle], comment="") -> str:
+    def _write_instruction(self, needle: Needle) -> str:
         """
         :param needle: the first (or only) needle that an instruction uses
-        :param loop_id: the loop involved in the operation (used for making comments)
-        :param second_needle: the second needle involved in the instructions (i.e., to transfer to
-        :param comment: Any specific comments to be included with this instruction
         :return: The string for the line of code executing the instruction
         """
         if self.instruction_type.value == Instruction_Type.Knit.value:
-            assert loop_id is not None, "Cannot knit null loop"
-            return knit(self.machine_state, self.direction, needle, self.carrier_set, loop_id, comment=comment)
+            return self.needles_to_instruction_parameters[needle].knit(self.machine_state, self.direction)
         elif self.instruction_type.value == Instruction_Type.Tuck.value:
-            assert loop_id is not None, "Cannot tuck null loop"
-            return tuck(self.machine_state, self.direction, needle, self.carrier_set, loop_id, comment=comment)
+            return self.needles_to_instruction_parameters[needle].tuck(self.machine_state, self.direction)
         elif self.instruction_type.value == Instruction_Type.Split.value:
-            assert loop_id is not None, "Cannot split null loop"
-            assert second_needle is not None, "Two needles needed to split"
-            return split(self.machine_state, self.direction, needle, second_needle, self.carrier_set, loop_id,
-                         comment=comment)
+            return self.needles_to_instruction_parameters[needle].split(self.machine_state, self.direction)
         elif self.instruction_type.value == Instruction_Type.Drop.value:
-            return drop(self.machine_state, needle, comment=comment)
+            return self.needles_to_instruction_parameters[needle].drop(self.machine_state)
         elif self.instruction_type.value == Instruction_Type.Xfer.value:
-            assert second_needle is not None, "Two needles needed to split"
-            return xfer(self.machine_state, needle, second_needle, comment=comment)
+            return self.needles_to_instruction_parameters[needle].xfer(self.machine_state)
         elif self.instruction_type.value == Instruction_Type.Miss.value:
-            return miss(self.direction, needle, self.carrier_set, comment=comment)
+            return self.needles_to_instruction_parameters[needle].miss(self.direction)
         else:
             assert False, "The instruction was not recognized"
 
@@ -146,23 +196,24 @@ class Carriage_Pass:
         instructions = []
         in_hooked_carriers = set()
         for carrier in self.carrier_set:
-            if carrier not in self.machine_state.yarns_in_operation:
-                in_hooked_carriers.add(carrier)
-                instructions.append(inhook(self.machine_state, [carrier]))
+            for sub_carrier in carrier.not_in_operation(self.machine_state):
+                if sub_carrier not in self.machine_state.yarns_in_operation:  # bring new yarns needed in
+                    in_hooked_carriers.add(sub_carrier)
+                    instructions.append(inhook(self.machine_state, sub_carrier))
 
         starting_needles = self._sorted_needles()
         for needle in starting_needles:
-            loop_id, second_needle = self.needles_to_instruction_parameters[needle]
             if len(instructions) == 0:
                 c = first_comment
             else:
                 c = comment
-            instruction = self._write_instruction(needle, loop_id, second_needle, comment=c)
+            self.needles_to_instruction_parameters[needle].comment = c
+            instruction = self._write_instruction(needle)
             instructions.append(instruction)
         self.machine_state.last_carriage_direction = self.direction
 
         # release hooks on second pass with inhooks
         for carrier in [*self.machine_state.in_hooks]:
             if carrier not in in_hooked_carriers:  # don't release hook on first pass with in hook
-                instructions.append(releasehook(self.machine_state, [carrier]))
+                instructions.append(releasehook(self.machine_state, carrier))
         return instructions
