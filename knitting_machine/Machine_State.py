@@ -59,18 +59,26 @@ class Needle:
         self.position: int = position
         assert self.position is not None
 
-    def opposite(self):
+    def opposite(self, slider: bool = False):
         """
+        :param slider: If true, creates a slider needle
         :return: the needle on the opposite bed at the same position
         """
-        return Needle(is_front=not self.is_front, position=self.position)
+        if slider:
+            return Slider_Needle(is_front=not self.is_front, position=self.position)
+        else:
+            return Needle(is_front=not self.is_front, position=self.position)
 
-    def offset(self, offset: int):
+    def offset(self, offset: int, slider: bool = False):
         """
+        :param slider: If true, creates a slider needle
         :param offset: the amount to offset the needle from
         :return: the needle offset spaces away on the same bed
         """
-        return Needle(is_front=self.is_front, position=self.position + offset)
+        if slider:
+            return Slider_Needle(is_front=self.is_front, position=self.position + offset)
+        else:
+            return Needle(is_front=self.is_front, position=self.position + offset)
 
     def __str__(self):
         if self.is_front:
@@ -91,6 +99,35 @@ class Needle:
             return self.position < other
         else:
             raise AttributeError
+
+    @property
+    def is_slider(self) -> bool:
+        """
+        :return: True if the needle is a slider
+        """
+        return False
+
+
+class Slider_Needle(Needle):
+    """
+    A Needle subclass for slider needles which an only transfer loops, but not be knit through
+    """
+
+    def __init__(self, is_front: bool, position: int):
+        super().__init__(is_front, position)
+
+    def __str__(self):
+        if self.is_front:
+            return f"fs{self.position + 1}"
+        else:
+            return f"bs{self.position + 1}"
+
+    @property
+    def is_slider(self) -> bool:
+        """
+        :return: True if the needle is a slider
+        """
+        return True
 
 
 class Machine_Bed:
@@ -116,7 +153,9 @@ class Machine_Bed:
         self._needle_count: int = needle_count
         self.held_loops: Dict[int, List[int]] = {i: [] for i in range(0, self.needle_count)}  # increasing indices indicate needles moving from left to right
         # i.e., LEFT -> 0 1 2....N <- RIGHT of Machine
+        self.held_slider_loops: Dict[int, List[int]] = {i: [] for i in range(0, self.needle_count)}
         self.loops_to_needle: Dict[int, Optional[int]] = {}
+        self.loops_to_slider_needle: Dict[int, Optional[int]] = {}
 
     @property
     def needle_count(self) -> int:
@@ -132,18 +171,24 @@ class Machine_Bed:
         """
         return self._is_front
 
-    def add_loop(self, loop_id: Optional[int], needle_position: int, drop_prior_loops: bool = True):
+    def add_loop(self, loop_id: Optional[int], needle_position: int, drop_prior_loops: bool = True, slider: bool = False):
         """
         Puts the loop_id on given needle, overrides existing loops as if a knit operation took place
+        :param slider: If true, puts the loop on the slider needle at position
         :param drop_prior_loops: If true, any loops currently held on this needle are dropped
         :param loop_id: the loop_id to be held on the needle
         :param needle_position: the position of the needle
         """
         assert 0 <= needle_position < self.needle_count, f"Cannot place a loop at position {needle_position}"
+        assert not (drop_prior_loops and slider), "Cannot knit on slider needle"
         if drop_prior_loops:
             self.drop_loop(needle_position)
-        self.held_loops[needle_position].append(loop_id)
-        self.loops_to_needle[loop_id] = needle_position
+        if not slider:
+            self.held_loops[needle_position].append(loop_id)
+            self.loops_to_needle[loop_id] = needle_position
+        else:
+            self.held_slider_loops[needle_position].append(loop_id)
+            self.loops_to_slider_needle[loop_id] = needle_position
 
     def drop_loop(self, needle_position: int):
         """
@@ -156,21 +201,27 @@ class Machine_Bed:
         for loop in current_loops:
             self.loops_to_needle[loop] = None
 
-    def __getitem__(self, item: int) -> List[int]:
+    def __getitem__(self, item: Needle) -> List[int]:
         """
         :param item: the needle position to get a loop from
         :return: the loop_id held at that position
         """
-        return self.held_loops[item]
+        if item.is_slider:
+            return self.held_slider_loops[item.position]
+        else:
+            return self.held_loops[item.position]
 
-    def get_needle_of_loop(self, loop_id: int) -> Optional[int]:
+    def get_needle_of_loop(self, loop_id: int) -> Optional[Needle]:
         """
         :param loop_id: the loop being searched for
         :return: None if the bed does not hold the loop, otherwise the needle position that holds it
         """
         if loop_id not in self.loops_to_needle:
-            return None
-        return self.loops_to_needle[loop_id]
+            if loop_id not in self.loops_to_slider_needle:
+                return None
+            else:
+                return Slider_Needle(self.is_front, self.loops_to_slider_needle[loop_id])
+        return Needle(self.is_front, self.loops_to_needle[loop_id])
 
 
 class Yarn_Carrier:
@@ -402,33 +453,27 @@ class Machine_State:
         needed_rack = front_pos - back_pos
         return self.racking == needed_rack
 
-    def __getitem__(self, item: Union[Tuple[int, bool], Needle]) -> List[int]:
+    def __getitem__(self, item: Needle) -> List[int]:
         """
         :param item: the needle post, true if getting from the front
         :return: the loop held on the specified needle and bed
         """
-        if isinstance(item, Needle):
-            needle_position = item.position
-            on_front = item.is_front
+        if item.is_front:
+            return self.front_bed[item]
         else:
-            needle_position = item[0]
-            on_front = item[1]
-        if on_front:
-            return self.front_bed[needle_position]
-        else:
-            return self.back_bed[needle_position]
+            return self.back_bed[item]
 
     def get_needle_of_loop(self, loop_id: int) -> Optional[Needle]:
         """
         :param loop_id: the loop being searched for
         :return: the needle holding the loop or None if it not held
         """
-        front_pos = self.front_bed.get_needle_of_loop(loop_id)
-        back_pos = self.back_bed.get_needle_of_loop(loop_id)
-        if front_pos is None and back_pos is None:
+        front_needle = self.front_bed.get_needle_of_loop(loop_id)
+        back_needle = self.back_bed.get_needle_of_loop(loop_id)
+        if front_needle is None and back_needle is None:
             return None
-        elif front_pos is None:
-            return Needle(is_front=False, position=back_pos)
+        elif front_needle is None:
+            return back_needle
         else:
-            assert back_pos is None, f"Loop {loop_id} cannot be on f{front_pos} and b{back_pos}"
-            return Needle(is_front=True, position=front_pos)
+            assert back_needle is None, f"Loop {loop_id} cannot be on f{front_needle.position} and b{back_needle.position}"
+            return front_needle

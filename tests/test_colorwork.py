@@ -60,9 +60,9 @@ def _cast_on(tuck_carrier, close_carrier, start_needle=0, end_needle=20, double=
 
 
 def test_platting():
-    c1 = Yarn_Carrier([3, 4])
-    c2 = Yarn_Carrier([4, 3])
-    carriage_passes, instructions, machine_state = _cast_on(Yarn_Carrier(3), Yarn_Carrier(4))
+    c1 = Yarn_Carrier([4, 5])
+    c2 = Yarn_Carrier([5, 4])
+    carriage_passes, instructions, machine_state = _cast_on(Yarn_Carrier(4), Yarn_Carrier(5))
     for row in range(0, 20):
         knits = {}
         if row % 2 == 0:
@@ -85,7 +85,6 @@ def test_platting():
             _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, Pass_Direction.Left_to_Right, knits, machine_state), carriage_passes, instructions)
 
     instructions.append(outhook(machine_state, c1))
-    # instructions.append(outhook(machine_state, c2))
 
     _write_instructions("platting.k", instructions)
 
@@ -266,8 +265,18 @@ def test_birdseye():
 def test_birdseye_3():
     c1 = Yarn_Carrier(3)
     c2 = Yarn_Carrier(4)
-    c3 = Yarn_Carrier(5)
+    c3 = Yarn_Carrier(6)
     carriage_passes, instructions, machine_state = _cast_on(c1, c2, double=True)
+    knits = {}
+    for n in range(19, - 1, -1):
+        needle = Needle(True, n)
+        knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c3)
+    _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, Pass_Direction.Right_to_Left, knits, machine_state), carriage_passes, instructions)
+    knits = {}
+    for n in range(0, 20):
+        needle = Needle(False, n)  # if double, knit a round by going on the back loops
+        knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c3)
+    _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, Pass_Direction.Left_to_Right, knits, machine_state), carriage_passes, instructions)
     instructions.append(rack(machine_state, .25))  # rack for all needle knitting
     for row in range(0, 20):
         c1_knits = {}
@@ -308,7 +317,7 @@ def test_birdseye_3():
             for n in range(0, 5):
                 front_needle = Needle(True, n)
                 back_needle = Needle(False, n)
-                c1_knits[front_needle] = Instruction_Parameters(front_needle, involved_loop=-1, carrier=c1)
+                c1_knits[front_needle] = Instruction_Parameters(front_needle, involved_loop=-1, carrier=c3)
                 if n % 2 == 0:
                     c1_knits[back_needle] = Instruction_Parameters(back_needle, involved_loop=-1, carrier=c1)
                 else:
@@ -326,7 +335,7 @@ def test_birdseye_3():
             for n in range(15, 20):
                 front_needle = Needle(True, n)
                 back_needle = Needle(False, n)
-                c3_knits[front_needle] = Instruction_Parameters(front_needle, involved_loop=-1, carrier=c3)
+                c3_knits[front_needle] = Instruction_Parameters(front_needle, involved_loop=-1, carrier=c2)
                 if n % 2 == 0:
                     c1_knits[back_needle] = Instruction_Parameters(back_needle, involved_loop=-1, carrier=c1)
                 else:
@@ -346,15 +355,15 @@ def test_birdseye_3():
 def test_double_jersey():
     c1 = Yarn_Carrier(3)
     carriage_passes, instructions, machine_state = _cast_on(c1, c1, double=True)
-    instructions.append(rack(machine_state, -.75))  # rack for all needle knitting
+    instructions.append(rack(machine_state,.25))  # rack for all needle knitting
     for row in range(0, 20):
         knits = {}
         if row % 2 == 0:
             for n in range(19, -1, -1):
                 front_needle = Needle(True, n)
                 back_needle = Needle(False, n)
-                knits[back_needle] = Instruction_Parameters(back_needle, involved_loop=-1, carrier=c1)
                 knits[front_needle] = Instruction_Parameters(front_needle, involved_loop=-1, carrier=c1)
+                knits[back_needle] = Instruction_Parameters(back_needle, involved_loop=-1, carrier=c1)
             _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, Pass_Direction.Right_to_Left, knits, machine_state), carriage_passes, instructions)
         else:
             for n in range(0, 20):
