@@ -4,7 +4,9 @@ Methods and support for writing knitout commands and updating a machine state
 import math
 from typing import Tuple, Optional
 
-from knitting_machine.Machine_State import Machine_State, Yarn_Carrier, Pass_Direction, Needle
+from knitting_machine.Machine_State import Machine_State, Pass_Direction
+from knitting_machine.yarn_carrier import Yarn_Carrier
+from knitting_machine.needles import Needle
 
 
 def rack(machine_state: Machine_State, racking: float, comment: str = "") -> str:
@@ -59,7 +61,9 @@ def knit(machine_state: Machine_State, direction: Pass_Direction, needle: Needle
     :param comment: additional details to document in the knitout
     :return: the knit instruction
     """
-    machine_state.add_loop(loop_id, needle.position, needle.is_front, carrier_set)
+    assert not needle.is_slider, "Cannot Knit on Slider"
+    assert needle.is_clear(machine_state), f"{needle} is not clear, check slider"
+    machine_state.add_loop(loop_id, needle, carrier_set)
     carriers = make_carrier_set(carrier_set, needle)
     return f"knit {direction} {needle}{carriers} ; knit loop {loop_id}, {comment}\n"
 
@@ -77,7 +81,9 @@ def tuck(machine_state: Machine_State, direction: Pass_Direction, needle: Needle
     :param comment: additional details to document in the knitout
     :return: the tuck instruction
     """
-    machine_state.add_loop(loop_id, needle.position, needle.is_front, carrier_set, drop_prior_loops=False)
+    assert not needle.is_slider, "Cannot Tuck on Slider"
+    assert needle.is_clear(machine_state), f"{needle} is not clear, check slider"
+    machine_state.add_loop(loop_id, needle, carrier_set, drop_prior_loops=False)
     carriers = make_carrier_set(carrier_set, needle)
     return f"tuck {direction} {needle}{carriers} ; tuck loop {loop_id}, {comment}\n"
 
@@ -97,8 +103,9 @@ def split(machine_state: Machine_State, direction: Pass_Direction, needle_1: Nee
     :param comment: additional details to document in the knitout
     :return: the split instruction
     """
+    assert not needle_1.is_slider, "Cannot Split on Slider"
     front_to_back, racking = _prepare_xfer(machine_state, needle_1, needle_2)
-    machine_state.add_loop(loop_id, needle_1.position, on_front=front_to_back, carrier_set=carrier_set)
+    machine_state.add_loop(loop_id, needle_1, carrier_set=carrier_set)
     carriers = make_carrier_set(carrier_set, needle_1)
     return f"{racking}split {direction} {needle_1} {needle_2}{carriers} ; split loop {loop_id}, {comment}\n"
 
@@ -110,7 +117,10 @@ def _prepare_xfer(machine_state, needle_1, needle_2) -> Tuple[bool, str]:
     :param needle_2: the second needle to xfer to
     :return: True if the transfer is from front to back, the racking instruction needed to make the xfer
     """
-    assert needle_1.is_front != needle_2.is_front, f"Cannot split to needles on same bed, {needle_1} to {needle_2}"
+    assert needle_1.is_front != needle_2.is_front, f"Cannot xfer to needles on same bed, {needle_1} to {needle_2}"
+
+    assert needle_1.is_clear(machine_state), f"{needle_1} is not clear, check slider"
+    assert needle_2.is_clear(machine_state), f"{needle_2} is not clear, check slider"
     if needle_1.is_front:
         front_needle = needle_1
         back_needle = needle_2
@@ -124,7 +134,7 @@ def _prepare_xfer(machine_state, needle_1, needle_2) -> Tuple[bool, str]:
         racking = ""
     else:
         racking = rack(machine_state, updated_racking, comment=f"rack to xfer {needle_1} to {needle_2}")
-    machine_state.xfer_loops(needle_1.position, needle_2.position, front_to_back)
+    machine_state.xfer_loops(needle_1, needle_2)
     return front_to_back, racking
 
 
@@ -137,7 +147,10 @@ def drop(machine_state: Machine_State, needle: Needle, comment: str = "") -> str
     :param comment: additional details to document in the knitout
     :return: the drop instruction
     """
-    machine_state.drop_loop(needle.position, needle.is_front)
+
+    assert not needle.is_slider, "Cannot Drop on Slider"
+    assert len(machine_state[needle.slider()]) == 0, f"Cannot drop at {needle} because {needle.slider()} holds loops"
+    machine_state.drop_loop(needle)
     return f"drop {needle} ;{comment}\n"
 
 

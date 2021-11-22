@@ -11,7 +11,7 @@ def stockinette(width: int = 4, height: int = 4, carrier:int=3) -> Knit_Graph:
     :return: a knitgraph of stockinette on one yarn of width stitches by height course
     """
     knitGraph = Knit_Graph()
-    yarn = Yarn("yarn", knitGraph, carrier_id=carrier)
+    yarn = Yarn("yarn", knitGraph, carrier=carrier)
     knitGraph.add_yarn(yarn)
     first_row = []
     for _ in range(0, width):

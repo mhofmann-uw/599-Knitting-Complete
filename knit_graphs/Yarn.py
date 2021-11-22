@@ -6,7 +6,7 @@ from typing import Optional, Tuple
 import networkx as networkx
 
 from knit_graphs.Loop import Loop
-from knitting_machine.Machine_State import Yarn_Carrier
+from knitting_machine.yarn_carrier import Yarn_Carrier
 
 
 class Yarn:
@@ -62,6 +62,20 @@ class Yarn:
         :param loop_id: the id of the new loop, if the loopId is none, it defaults to 1 more than last loop in the graph
         :return: the loop_id added to the yarn, the loop added to the yarn
         """
+        return self.insert_loop(self.last_loop_id, True, loop_id, loop, is_twisted)
+
+    def insert_loop(self, neighbor_loop_id: int, insert_after: bool, loop_id: int = None, loop: Optional[Loop] = None,
+                    is_twisted: bool = False):
+        """
+            Adds the loop at the end of the yarn
+            :param insert_after: if true, will add the loop to the yarn after neighbor
+            :param neighbor_loop_id: the neighbor loop id to add to
+            :param is_twisted: The parameter used for twisting the loop if it is created in the method
+            :param loop: The loop to be added at this id. If none, an non-twisted loop will be created
+            :param loop_id: the id of the new loop, if the loopId is none, it defaults to 1 more than last loop in the graph
+            :return: the loop_id added to the yarn, the loop added to the yarn
+            """
+        assert neighbor_loop_id in self.yarn_graph, f"Cannot connect to neighbor loop {neighbor_loop_id}"
         if loop_id is None:  # Create a new Loop ID
             if loop is not None:  # get the loop id from the provided loop
                 assert self.last_loop_id > loop.loop_id, \
@@ -74,10 +88,18 @@ class Yarn:
         if loop is None:  # create a loop from default information
             loop = Loop(loop_id, self.yarn_id, is_twisted)
         self.yarn_graph.add_node(loop_id, loop=loop)
-        if self.last_loop_id is not None:  # make a link between this and the last yarn
-            self.yarn_graph.add_edge(self.last_loop_id, loop_id)
-        self.last_loop_id = loop_id
-        self.knit_graph.last_loop_id = loop_id
+        if insert_after:
+            for next_neighbor_id in self.yarn_graph.successors(neighbor_loop_id):
+                self.yarn_graph.remove_edge(neighbor_loop_id, next_neighbor_id)
+                self.yarn_graph.add_edge(loop_id, next_neighbor_id)
+            self.yarn_graph.add_edge(neighbor_loop_id, loop_id)
+        else:
+            for prior_neighbor_id in self.yarn_graph.predecessors(neighbor_loop_id):
+                self.yarn_graph.remove_edge(prior_neighbor_id, neighbor_loop_id)
+                self.yarn_graph.add_edge(prior_neighbor_id, loop_id)
+            self.yarn_graph.add_edge(loop_id, neighbor_loop_id)
+        if len(self.yarn_graph.successors(loop_id)) == 0:
+            self.last_loop_id = loop_id
         return loop_id, loop
 
     def __contains__(self, item):

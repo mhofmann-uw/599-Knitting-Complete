@@ -1,4 +1,6 @@
-from knitting_machine.Machine_State import Machine_State, Yarn_Carrier, Needle, Pass_Direction
+from knitting_machine.Machine_State import Machine_State, Pass_Direction
+from knitting_machine.yarn_carrier import Yarn_Carrier
+from knitting_machine.needles import Needle
 from knitting_machine.machine_operations import outhook, miss, rack
 from knitting_machine.operation_sets import Carriage_Pass, Instruction_Type, Instruction_Parameters
 
@@ -364,7 +366,7 @@ def test_double_jersey():
                 back_needle = Needle(False, n)
                 knits[front_needle] = Instruction_Parameters(front_needle, involved_loop=-1, carrier=c1)
                 knits[back_needle] = Instruction_Parameters(back_needle, involved_loop=-1, carrier=c1)
-            _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, Pass_Direction.Right_to_Left, knits, machine_state), carriage_passes, instructions)
+            _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, Pass_Direction.Right_to_Left, needles_to_instruction_parameters=knits, machine_state=machine_state), carriage_passes, instructions)
         else:
             for n in range(0, 20):
                 front_needle = Needle(True, n)

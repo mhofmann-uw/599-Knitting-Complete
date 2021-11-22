@@ -2,8 +2,9 @@
 from enum import Enum
 from typing import Optional, Dict, Set, List
 
-from knitting_machine.Machine_State import Needle
+from knitting_machine.needles import Needle
 from knitting_machine.machine_operations import *
+from knitting_machine.yarn_carrier import Yarn_Carrier
 
 
 class Instruction_Type(Enum):
@@ -112,7 +113,7 @@ class Carriage_Pass:
 
     def __init__(self, instruction_type: Instruction_Type, direction: Optional[Pass_Direction],
                  needles_to_instruction_parameters: Dict[Needle, Instruction_Parameters],
-                 machine_state: Machine_State):
+                 machine_state: Machine_State, pass_comment=""):
         """
         :param instruction_type: The type of instruction to be done in this pass
         :param direction: the direction the carriage will move for this pass
@@ -120,6 +121,7 @@ class Carriage_Pass:
             The starting needles mapped to the loop_id created and a second needle to xfer
         :param machine_state: The machine model to update as instructions are written
         """
+        self._pass_comment = pass_comment
         self.machine_state: Machine_State = machine_state
         self._carrier_set: Set[Yarn_Carrier] = set()
         self.needles_to_instruction_parameters: \
@@ -186,14 +188,12 @@ class Carriage_Pass:
         else:
             assert False, "The instruction was not recognized"
 
-    def write_instructions(self, first_comment="", comment="") -> List[str]:
+    def write_instructions(self) -> List[str]:
         """
-        :param first_comment: A comment to add to the first instruction in the pass
-        :param comment: A comment to add to every instruction in the pass
         :return: A list of knitout instructions that executes the instruction on each needle
         """
         # bring in yarns that are not yet in operation
-        instructions = []
+        instructions = [f"; {self._pass_comment}\n"]
         in_hooked_carriers = set()
         for carrier in self.carrier_set:
             for sub_carrier in carrier.not_in_operation(self.machine_state):
@@ -203,11 +203,6 @@ class Carriage_Pass:
 
         starting_needles = self._sorted_needles()
         for needle in starting_needles:
-            if len(instructions) == 0:
-                c = first_comment
-            else:
-                c = comment
-            self.needles_to_instruction_parameters[needle].comment = c
             instruction = self._write_instruction(needle)
             instructions.append(instruction)
         self.machine_state.last_carriage_direction = self.direction
@@ -217,3 +212,13 @@ class Carriage_Pass:
             if carrier not in in_hooked_carriers:  # don't release hook on first pass with in hook
                 instructions.append(releasehook(self.machine_state, carrier))
         return instructions
+
+    def __len__(self):
+        return len(self.needles_to_instruction_parameters)
+
+    @property
+    def is_empty(self) -> bool:
+        """
+        :return: True if no instructions are in the pass
+        """
+        return len(self) == 0

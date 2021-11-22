@@ -1,12 +1,12 @@
 """The graph structure used to represent knitted objects"""
 from enum import Enum
-from typing import Dict, Optional, List, Tuple
+from typing import Dict, Optional, List, Tuple, Union
 
 import networkx
 
 from knit_graphs.Loop import Loop
 from knit_graphs.Yarn import Yarn
-from knitting_machine.Machine_State import Yarn_Carrier
+from knitting_machine.yarn_carrier import Yarn_Carrier
 
 
 class Pull_Direction(Enum):
@@ -98,7 +98,7 @@ class Knit_Graph:
         current_course_set = set()
         current_course = []
         course = 0
-        for loop_id in self.graph.nodes:
+        for loop_id in sorted([*self.graph.nodes]):
             no_parents_in_course = True
             for parent_id in self.graph.predecessors(loop_id):
                 if parent_id in current_course_set:
@@ -114,35 +114,6 @@ class Knit_Graph:
                 course += 1
             loop_ids_to_course[loop_id] = course
         course_to_loop_ids[course] = current_course
-        return loop_ids_to_course, course_to_loop_ids
-
-    # @deprecated("Deprecated because this only works in rows, but not round construction")
-    def deprecated_get_course(self) -> Tuple[Dict[int, int], Dict[int, List[int]]]:
-        """
-        :return: A dictionary of loop_ids to the course they are on,
-        a dictionary or course ids to the loops on that course in the order of creation
-        The first set of loops in the graph is on course 0.
-        A course change occurs when a loop has a parent loop that is in the last course.
-        """
-        loop_ids_to_course = {}
-        for loop_id in self.graph.nodes:
-            loop = self.loops[loop_id]
-            prior_id = loop.prior_loop_id(self)
-            if prior_id is None:  # the first loop in the graph
-                loop_ids_to_course[loop_id] = 0
-            elif self.graph.has_edge(prior_id, loop_id):  # stitch between the two creates a course change
-                loop_ids_to_course[loop_id] = loop_ids_to_course[prior_id] + 1
-            else:
-                loop_ids_to_course[loop_id] = loop_ids_to_course[prior_id]
-
-        course_to_loop_ids = {}
-        for loop_id, course in loop_ids_to_course.items():
-            if course not in course_to_loop_ids:
-                course_to_loop_ids[course] = []
-            course_to_loop_ids[course].append(loop_id)
-
-        for course in course_to_loop_ids:
-            course_to_loop_ids[course].sort()
         return loop_ids_to_course, course_to_loop_ids
 
     def get_carriers(self) -> List[Yarn_Carrier]:
@@ -172,3 +143,23 @@ class Knit_Graph:
             raise AttributeError
         else:
             return self.graph.nodes[item]["loop"]
+
+    def get_stitch_edge(self, parent: Union[Loop, int], child: Union[Loop, int]):
+        """
+        Short cut to get stitch edge data from loops or ids
+        :param parent: parent loop or id of parent loop
+        :param child: child loop or id of child loop
+        :return: the edge data for this stitch edge
+        """
+        parent_id = parent
+        if isinstance(parent, Loop):
+            parent_id = parent.loop_id
+        child_id = child
+        if isinstance(child, Loop):
+            child_id = child.loop_id
+        if self.graph.has_edge(parent_id, child_id):
+            return self.graph[parent_id][child_id]
+        else:
+            return None
+
+

@@ -51,7 +51,7 @@ def visualize_knitGraph(knit_graph: Knit_Graph, display_name: str = "nx.html", h
         prior_level = level
 
     for yarn in knit_graph.yarns.values():
-        for prior_node, next_node in yarn.yarn_graph.edges:
+        for prior_node, next_node in yarn.loop_id_list.edges:
             network.add_edge(prior_node, next_node, arrow="middle", physics=True, color="red")
 
     for parent_id, child_id in knit_graph.graph.edges:

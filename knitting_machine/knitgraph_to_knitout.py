@@ -2,7 +2,8 @@
 from typing import Dict, List, Tuple
 
 from knit_graphs.Knit_Graph import Knit_Graph, Pull_Direction
-from knitting_machine.Machine_State import Machine_State, Needle, Pass_Direction
+from knitting_machine.Machine_State import Machine_State, Pass_Direction
+from knitting_machine.needles import Needle
 from knitting_machine.machine_operations import outhook
 from knitting_machine.operation_sets import Carriage_Pass, Instruction_Type, Instruction_Parameters
 
@@ -62,7 +63,7 @@ class Knitout_Generator:
                 else:
                     drops[back_needle] = Instruction_Parameters(front_needle)
         carriage_pass = Carriage_Pass(Instruction_Type.Drop, None, drops, self._machine_state)
-        self._add_carriage_pass(carriage_pass, "Drop KnitGraph")
+        self._add_carriage_pass(carriage_pass)
         carriage_pass = Carriage_Pass(Instruction_Type.Drop, None, second_drops, self._machine_state)
         self._add_carriage_pass(carriage_pass)
 
@@ -81,12 +82,10 @@ class Knitout_Generator:
             else:
                 odd_tucks_data[needle_1] = Instruction_Parameters(needle_1, involved_loop=-1, carrier=carrier_set)  # note, fake loop_id
 
-        even_pass = Carriage_Pass(Instruction_Type.Tuck, Pass_Direction.Right_to_Left, even_tucks_data,
-                                  self._machine_state)
-        self._add_carriage_pass(even_pass, "even cast-on")
-        odd_pass = Carriage_Pass(Instruction_Type.Tuck, Pass_Direction.Left_to_Right, odd_tucks_data,
-                                 self._machine_state)
-        self._add_carriage_pass(odd_pass, "odd cast-on")
+        even_pass = Carriage_Pass(Instruction_Type.Tuck, Pass_Direction.Right_to_Left, even_tucks_data, self._machine_state)
+        self._add_carriage_pass(even_pass)
+        odd_pass = Carriage_Pass(Instruction_Type.Tuck, Pass_Direction.Left_to_Right, odd_tucks_data, self._machine_state)
+        self._add_carriage_pass(odd_pass)
 
         reverse_knits: Dict[Needle, Instruction_Parameters] = {}
         first_loops: Dict[Needle, Instruction_Parameters] = {}
@@ -95,12 +94,10 @@ class Knitout_Generator:
             reverse_knits[needle_1] = Instruction_Parameters(needle_1, involved_loop=-1, carrier=carrier_set)  # note, fake loop_id
             first_loops[needle_1] = Instruction_Parameters(needle_1, involved_loop=loop_id, carrier=carrier_set)
 
-        carriage_pass = Carriage_Pass(Instruction_Type.Knit, Pass_Direction.Right_to_Left,
-                                      reverse_knits, self._machine_state)
-        self._add_carriage_pass(carriage_pass, "stabilize cast-on")
-        carriage_pass = Carriage_Pass(Instruction_Type.Knit, Pass_Direction.Left_to_Right,
-                                      first_loops, self._machine_state)
-        self._add_carriage_pass(carriage_pass, "first row loops")
+        carriage_pass = Carriage_Pass(Instruction_Type.Knit, Pass_Direction.Right_to_Left, reverse_knits, self._machine_state)
+        self._add_carriage_pass(carriage_pass)
+        carriage_pass = Carriage_Pass(Instruction_Type.Knit, Pass_Direction.Left_to_Right, first_loops, self._machine_state)
+        self._add_carriage_pass(carriage_pass)
 
     def _knit_row(self, loop_ids: List[int], direction: Pass_Direction, course_number: int):
         """
@@ -116,7 +113,7 @@ class Knitout_Generator:
         for loop_id, target_needle in loop_id_to_target_needle.items():
             knit_data[target_needle] = Instruction_Parameters(target_needle, involved_loop=loop_id, carrier=carrier_set)
         carriage_pass = Carriage_Pass(Instruction_Type.Knit, direction, knit_data, self._machine_state)
-        self._add_carriage_pass(carriage_pass, f"Knit course {course_number}")
+        self._add_carriage_pass(carriage_pass)
 
     def _do_xfers_for_row(self, loop_ids: List[int], direction: Pass_Direction) -> Dict[int, Needle]:
         """
@@ -232,13 +229,13 @@ class Knitout_Generator:
                 offset_needle = front_needle.offset(offset)
                 back_cable_xfers[offset][back_needle] = Instruction_Parameters(back_needle, needle_2=offset_needle)
         carriage_pass = Carriage_Pass(Instruction_Type.Xfer, None, xfers_to_back, self._machine_state)
-        self._add_carriage_pass(carriage_pass, "cables to back")
+        self._add_carriage_pass(carriage_pass)
         for offset, xfer_params in front_cable_xfers.items():
             carriage_pass = Carriage_Pass(Instruction_Type.Xfer, None, xfer_params, self._machine_state)
-            self._add_carriage_pass(carriage_pass, f"front of cable at offset {offset} to front")
+            self._add_carriage_pass(carriage_pass)
         for offset, xfer_params in back_cable_xfers.items():
             carriage_pass = Carriage_Pass(Instruction_Type.Xfer, None, xfer_params, self._machine_state)
-            self._add_carriage_pass(carriage_pass, f"back of cable at offset {offset} to front")
+            self._add_carriage_pass(carriage_pass)
 
     def _do_decrease_transfers(self, parent_loops_to_needles: Dict[int, Needle], decrease_offsets: Dict[int, int]):
         """
@@ -268,11 +265,11 @@ class Knitout_Generator:
                 offset_to_xfers_to_target[offset][holding_needle] = Instruction_Parameters(holding_needle, needle_2=offset_needle)
 
         carriage_pass = Carriage_Pass(Instruction_Type.Xfer, None, xfers_to_holding_bed, self._machine_state)
-        self._add_carriage_pass(carriage_pass, "send loops to decrease to back")
+        self._add_carriage_pass(carriage_pass)
         for offset in sorted(offset_to_xfers_to_target.keys()):
             offset_xfers = offset_to_xfers_to_target[offset]
             carriage_pass = Carriage_Pass(Instruction_Type.Xfer, None, offset_xfers, self._machine_state)
-            self._add_carriage_pass(carriage_pass, f"stack decreases with offset {offset}")
+            self._add_carriage_pass(carriage_pass)
 
     def _do_knit_purl_xfers(self, loop_id_to_target_needle: Dict[int, Needle]):
         """
@@ -286,18 +283,17 @@ class Knitout_Generator:
             if len(loops_on_opposite) > 0:  # something to transfer for knitting
                 xfers[opposite_needle] = Instruction_Parameters(opposite_needle, needle_2=target_needle)
         carriage_pass = Carriage_Pass(Instruction_Type.Xfer, None, xfers, self._machine_state)
-        self._add_carriage_pass(carriage_pass, "kp-transfers")
+        self._add_carriage_pass(carriage_pass)
 
-    def _add_carriage_pass(self, carriage_pass: Carriage_Pass, first_comment="", comment=""):
+    def _add_carriage_pass(self, carriage_pass: Carriage_Pass):
         """
         Executes the carriage pass and adds it to the instructions
         :param carriage_pass: the carriage pass to be executed
-        :param first_comment: a comment for the first instruction
         :param comment:  a comment for each instruction
         """
         if len(carriage_pass.needles_to_instruction_parameters) > 0:
             self._carriage_passes.append(carriage_pass)
-            self._instructions.extend(carriage_pass.write_instructions(first_comment, comment))
+            self._instructions.extend(carriage_pass.write_instructions())
 
     def write_instructions(self, filename: str, generate_instructions: bool = True):
         """
