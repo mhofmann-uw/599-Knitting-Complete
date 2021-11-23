@@ -38,3 +38,7 @@ def test_write_shortrows():
     knitGraph = short_rows(20, buffer_height=5)
     generator = Knitout_Generator(knitGraph)
     generator.write_instructions("test_short_rows.k")
+
+if __name__ == "__main__":
+    #test_double_jersey()
+    test_write_shortrows()

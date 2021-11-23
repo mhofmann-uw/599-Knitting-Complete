@@ -59,7 +59,7 @@ def _cast_on(tuck_carrier, close_carrier, start_needle=0, end_needle=20, double=
     return carriage_passes, instructions, machine_state
 
 
-def _cast_on_round(tuck_carrier, close_carrier, start_needle=0, end_needle=20, double=False):
+def _cast_on_round(tuck_carrier, close_carrier, start_needle=0, end_needle=20):
     machine_state = Machine_State()
     carriage_passes = []
     instructions = [";!knitout-2\n",
