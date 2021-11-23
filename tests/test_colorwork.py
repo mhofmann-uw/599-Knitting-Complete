@@ -93,7 +93,7 @@ def test_platting():
 def test_standard():
     c1 = Yarn_Carrier(3)
     c2 = Yarn_Carrier(4)
-    carriage_passes, instructions, machine_state = _cast_on([c1], [c2])
+    carriage_passes, instructions, machine_state = _cast_on(c1, c2)
     for row in range(0, 20):
         knits = {}
         if row % 2 == 0:
@@ -128,7 +128,7 @@ def test_standard():
 def test_intarsia_misses():
     c1 = Yarn_Carrier(3)
     c2 = Yarn_Carrier(4)
-    carriage_passes, instructions, machine_state = _cast_on([c1], [c2])
+    carriage_passes, instructions, machine_state = _cast_on(c1, c2)
     for row in range(0, 20):
         knits = {}
         if row % 2 == 0:
@@ -163,7 +163,7 @@ def test_intarsia_misses():
 def test_jacquard():
     c1 = Yarn_Carrier(3)
     c2 = Yarn_Carrier(4)
-    carriage_passes, instructions, machine_state = _cast_on([c1], [c2], double=True)
+    carriage_passes, instructions, machine_state = _cast_on(c1, c2, double=True)
     for row in range(0, 20):
         c1_knits = {}
         c2_knits = {}
@@ -367,3 +367,13 @@ def test_double_jersey():
     instructions.append(outhook(machine_state, c1))
 
     _write_instructions("double-jersey.k", instructions)
+
+
+if __name__ == "__main__":
+    test_double_jersey()
+    test_birdseye_3()
+    test_birdseye()
+    test_platting()
+    test_intarsia_misses()
+    test_jacquard()
+    test_standard()
