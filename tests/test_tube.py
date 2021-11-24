@@ -1,6 +1,6 @@
 from enum import Enum
 from knitting_machine.Machine_State import Machine_State, Yarn_Carrier, Needle, Pass_Direction
-from knitting_machine.machine_operations import outhook, rack
+from knitting_machine.machine_operations import outhook
 from knitting_machine.operation_sets import Carriage_Pass, Instruction_Type, Instruction_Parameters
 
 class Bend_Direction(Enum):
@@ -162,7 +162,7 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
     print(indices)
 
     print("pres start")
-    instructions.append("starting pres")
+    #instructions.append("starting pres")
 
     # add regular knits up to the place the bend is shifted to
     knits = {}
@@ -182,9 +182,9 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
             knits = {}
     _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir, knits, machine_state), carriage_passes, instructions)
     print("pres end")
-    instructions.append("done w pres")
+    #instructions.append("done w pres")
 
-    instructions.append("starting short rows")
+    #instructions.append("starting short rows")
     """
     if bend_shift <= width:
         knits = {}
@@ -246,7 +246,7 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
                     print("change dir")
             _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir.opposite(), knits, machine_state), carriage_passes, instructions)
         print("newline")
-    instructions.append("middle")
+    #instructions.append("middle")
     print("middle")
     # grow
     # ensure we are starting off in the right direction
@@ -309,10 +309,10 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
             _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir.opposite(), knits, machine_state),
                                carriage_passes, instructions)
         print("newline")
-    instructions.append("done with short rows")
+    #instructions.append("done with short rows")
     # add extras to complete the round
     if bend_shift > 0:
-        instructions.append("starting posts")
+        #instructions.append("starting posts")
         knits = {}
         for n in range(bend_shift+1, width*2):
             if n < width:
@@ -327,7 +327,7 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
                                    carriage_passes, instructions)
                 knits = {}
         _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir, knits, machine_state), carriage_passes, instructions)
-        instructions.append("done w posts")
+        #instructions.append("done w posts")
 
 
 """
@@ -455,7 +455,7 @@ def test_multi_bend(width, end, bends, file, carrier:int=3):
     """
     height = bends[len(bends)-1].position + end + 1
     carriage_passes, instructions, machine_state = _cast_on_round(c1, c1, start_needle=0, end_needle=width)
-    instructions.append(rack(machine_state, -.75))  # rack for all needle knitting
+    #instructions.append(rack(machine_state, -.75))  # rack for all needle knitting
 
     cur = 0
     for i in range(0, len(bends)):
@@ -509,7 +509,17 @@ if __name__ == "__main__":
     #test_multi_bend(10, 3, [b1, b2], 3)
     # height is measured by full rows, short rows don't count towards height
     # some bends may have the same position
-    b3 = Bend(1, 3, 4)
-    b4 = Bend(2, 3, 9)
-    test_multi_bend(6, 3, [b3, b4], "shifted", 3)
-    test_multi_bend(6, 3, [Bend(1, 3, 0), Bend(2, 3, 6)], "centered", 3)
+    #b3 = Bend(1, 3, 4)
+    #b4 = Bend(2, 3, 9)
+    #test_multi_bend(6, 3, [b3, b4], "shifted2", 3)
+    #test_multi_bend(6, 3, [Bend(1, 3, 0), Bend(2, 3, 6)], "wat", 3)
+    #test_multi_bend(6, 3, [Bend(1, 3, 0), Bend(2, 3, 6)], "centered", 3)
+    # to knit
+    #test_multi_bend(10, 5, [Bend(6, 5, 0), Bend(11, 5, 6)], "largecentered", 3)
+    #test_multi_bend(10, 5, [Bend(6, 5, 4), Bend(11, 5, 9)], "largeshifted", 3)
+    #test_multi_bend(10, 1, [Bend(1, 5, 0), Bend(1, 5, 6), Bend(1, 5, 0), Bend(1, 5, 6)], "consecutive", 3)
+    #test_multi_bend(10, 1, [Bend(1, 5, 0), Bend(1, 5, 3), Bend(1, 5, 6), Bend(1, 5, 9)], "consecutive_shifted", 3)
+    test_multi_bend(10, 5, [Bend(6, 5, 0), Bend(11, 5, 6), Bend(16, 5, 0), Bend(21, 5, 6)], "largecentered4bends", 3)
+    test_multi_bend(10, 5, [Bend(11, 5, 0), Bend(16, 5, 6), Bend(26, 5, 4), Bend(31, 5, 9)], "largeshifted4bends", 3)
+
+

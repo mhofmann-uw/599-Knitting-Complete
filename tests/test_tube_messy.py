@@ -702,5 +702,5 @@ if __name__ == "__main__":
     # some bends may have the same position
     b3 = Bend(1, 3, 4)
     b4 = Bend(2, 3, 9)
-    test_multi_bend(6, 3, [b3, b4], "shifted", 3)
-    test_multi_bend(6, 3, [Bend(1, 3, 0), Bend(2, 3, 6)], "centered", 3)
+    test_multi_bend(6, 3, [b3, b4], "shifted2", 3)
+    test_multi_bend(6, 3, [Bend(1, 3, 0), Bend(2, 3, 6)], "centered2", 3)

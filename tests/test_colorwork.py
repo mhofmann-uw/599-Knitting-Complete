@@ -447,4 +447,5 @@ def test_tube(circ: int = 4, height: int = 4, carrier:int=3):
 
 if __name__ == "__main__":
     #test_double_jersey()
-    test_tube(12, 12, 3)
+    #test_tube(12, 12, 3)
+    test_birdseye_3()
