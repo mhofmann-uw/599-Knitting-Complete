@@ -237,6 +237,7 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
     print(indices)
 
     print("pres start")
+    instructions.append("starting pres")
 
     # add regular knits up to the place the bend is shifted to
     for n in range(0, bend_shift):
@@ -250,7 +251,9 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
         knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c1)
         _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir, knits, machine_state), carriage_passes, instructions)
     print("pres end")
+    instructions.append("done w pres")
 
+    instructions.append("starting short rows")
     """
     if bend_shift <= width:
         knits = {}
@@ -312,6 +315,7 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
                     print("change dir")
             _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir.opposite(), knits, machine_state), carriage_passes, instructions)
         print("newline")
+    instructions.append("middle")
     print("middle")
     # grow
     # ensure we are starting off in the right direction
@@ -374,18 +378,21 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
             _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir.opposite(), knits, machine_state),
                                carriage_passes, instructions)
         print("newline")
-
+    instructions.append("done with short rows")
     # add extras to complete the round
     if bend_shift > 0:
+        instructions.append("starting posts")
         knits = {}
-        for n in range(bend_shift, width*2):
+        for n in range(bend_shift+1, width*2):
+            knits = {}
             if n < width:
                 pass_dir = Pass_Direction.Right_to_Left
             else:
                 pass_dir = Pass_Direction.Left_to_Right
             needle = needles[n]
             knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c1)
-        _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir, knits, machine_state), carriage_passes, instructions)
+            _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir, knits, machine_state), carriage_passes, instructions)
+        instructions.append("done w posts")
 
 
 """
