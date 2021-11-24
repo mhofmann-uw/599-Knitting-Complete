@@ -208,6 +208,9 @@ def tube_helper(width, height, c1, machine_state, carriage_passes, instructions)
         _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, Pass_Direction.Left_to_Right, knits, machine_state), carriage_passes, instructions)
 
 
+def should_switch_directions(n, width, cur_dir):
+    return (cur_dir is Pass_Direction.Right_to_Left and (n % (width*2) == width-1 or n % (width*2) == width)) or (cur_dir is Pass_Direction.Left_to_Right and (n % (width*2) == width*2-1 or n % (width*2) == 0))
+
 """
 adds short rows to the bend_dir using this shape
 XXXXXXX
@@ -280,6 +283,13 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
                     pass_dir = Pass_Direction.Left_to_Right
                 needle = needles[n % (width * 2)]
                 knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c1)
+                print(needle, pass_dir)
+                # if at about to change dirs, do a carriage pass
+                if should_switch_directions(n, width, pass_dir):
+                    _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir, knits, machine_state),
+                                       carriage_passes, instructions)
+                    knits = {}
+                    print("change dir")
             _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir, knits, machine_state),
                                carriage_passes, instructions)
 
@@ -293,6 +303,13 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
                     pass_dir = Pass_Direction.Left_to_Right
                 needle = needles[n % (width*2)]
                 knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c1)
+                print(needle, pass_dir.opposite())
+                # if at about to change dirs, do a carriage pass
+                if should_switch_directions(n, width, pass_dir.opposite()):
+                    _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir.opposite(), knits, machine_state),
+                                       carriage_passes, instructions)
+                    knits = {}
+                    print("change dir")
             _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir.opposite(), knits, machine_state), carriage_passes, instructions)
         print("newline")
     print("middle")
@@ -630,6 +647,6 @@ if __name__ == "__main__":
     #test_multi_bend(10, 3, [b1, b2], 3)
     # height is measured by full rows, short rows don't count towards height
     # some bends may have the same position
-    b3 = Bend(3, 3, 4)
-    b4 = Bend(6, 3, 9)
+    b3 = Bend(1, 3, 4)
+    b4 = Bend(2, 3, 9)
     test_multi_bend(6, 3, [b3, b4], 3)
