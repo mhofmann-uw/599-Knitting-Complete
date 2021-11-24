@@ -241,6 +241,7 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
 
     # add regular knits up to the place the bend is shifted to
     knits = {}
+    pass_dir = Pass_Direction.Right_to_Left
     for n in range(0, bend_shift):
         print(n)
         if n < width:
@@ -620,7 +621,7 @@ def test_tube_bent(width, height, bend_loc, bend_height, bend_dir, carrier:int=3
     _write_instructions("tube_bent.k", instructions)
 
 
-def test_multi_bend(width, end, bends, carrier:int=3):
+def test_multi_bend(width, end, bends, file, carrier:int=3):
     for i in range(0, len(bends)):
         cur = bends[i]
         if i > 0:
@@ -682,7 +683,7 @@ def test_multi_bend(width, end, bends, carrier:int=3):
 
     instructions.append(outhook(machine_state, c1))
 
-    _write_instructions("tube_multi_bend_shifted.k", instructions)
+    _write_instructions(file+".k", instructions)
 
 
 if __name__ == "__main__":
@@ -701,4 +702,5 @@ if __name__ == "__main__":
     # some bends may have the same position
     b3 = Bend(1, 3, 4)
     b4 = Bend(2, 3, 9)
-    test_multi_bend(6, 3, [b3, b4], 3)
+    test_multi_bend(6, 3, [b3, b4], "shifted", 3)
+    test_multi_bend(6, 3, [Bend(1, 3, 0), Bend(2, 3, 6)], "centered", 3)
