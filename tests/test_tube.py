@@ -29,9 +29,9 @@ class Bend:
         assert self.height is not None
         assert self.bend_dir is not None
     """
-        if bend_dir is Bend_Direction.Back or Bend_Direction.Front:
+        if bend_dir is Bend_Direction.Back or bend_dir is Bend_Direction.Front:
             assert height <= width / 2
-        elif bend_dir is Bend_Direction.Left or Bend_Direction.Right:
+        elif bend_dir is Bend_Direction.Left or bend_dir is Bend_Direction.Right:
             assert height < width
         else:
             raise AttributeError
@@ -220,20 +220,25 @@ XXXXXXX
 """
 def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, instructions, bend_shift=0):
     """
+    :param: width is same as body width and short row triangle width
     :param: bend_shift is an int >= 0 and < width*2 that is where the bend triangle starts.
     """
     # map ints to needles
+    #print("width", width)
     needles = []
-    for f in range(width, 0, -1):
+    for f in range(width-1, -1, -1):
         needles.append(Needle(True, f))
-    for b in range(1, width+1):
+    for b in range(0, width):
         needles.append(Needle(False, b))
     indices = dict(list(enumerate(needles)))
     print(indices)
 
+    print("pres start")
+
     # add regular knits up to the place the bend is shifted to
     for n in range(0, bend_shift):
         knits = {}
+        print(n)
         if n < width:
             pass_dir = Pass_Direction.Right_to_Left
         else:
@@ -241,6 +246,8 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
         needle = needles[n]
         knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c1)
         _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir, knits, machine_state), carriage_passes, instructions)
+    print("pres end")
+
     """
     if bend_shift <= width:
         knits = {}
@@ -265,18 +272,20 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
         knits = {}
         if row % 2 == 0:
             # RtL
-            for n in range(width-1-row, -1+row, -1): # todo
+            for n in range(bend_shift + row, bend_shift + width - row):  # might be wrong
                 print(n)
-                if n % (width*2) < width:
+                if n % (width * 2) < width:
                     pass_dir = Pass_Direction.Right_to_Left
                 else:
                     pass_dir = Pass_Direction.Left_to_Right
-                needle = needles[n % (width*2)]
+                needle = needles[n % (width * 2)]
                 knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c1)
-            _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir, knits, machine_state), carriage_passes, instructions)
+            _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir, knits, machine_state),
+                               carriage_passes, instructions)
+
         else:
             # LtR
-            for n in range(row, width-row): # todo
+            for n in range(bend_shift+width-row-1, bend_shift-1+row, -1): # might be wrong
                 print(n)
                 if n % (width*2) < width:
                     pass_dir = Pass_Direction.Right_to_Left
@@ -286,6 +295,7 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
                 knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c1)
             _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir.opposite(), knits, machine_state), carriage_passes, instructions)
         print("newline")
+    print("middle")
     # grow
     # ensure we are starting off in the right direction
     if height % 2 == 0:
@@ -299,14 +309,14 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
         knits = {}
         if row % 2 == 0:
             # even_dir
-            for n in range(width-height+row, -1+height-row-1, -1): # todo
+            for n in range(bend_shift+width+row-height, bend_shift-1-row+height, -1):  # might be wrong
                 print(n)
                 needle = needles[n % (width*2)]
                 knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c1)
             _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, even_dir, knits, machine_state), carriage_passes, instructions)
         else:
             # odd_dir
-            for n in range(height-row-1, width-height+row+1): # todo
+            for n in range(bend_shift-row+height, bend_shift+width+row+1-height):  # might be wrong
                 print(n)
                 needle = needles[n % (width*2)]
                 knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c1)
@@ -503,9 +513,9 @@ def left_bend_helper(width, height, c1, machine_state, carriage_passes, instruct
 def test_tube_bent(width, height, bend_loc, bend_height, bend_dir, carrier:int=3):
     assert bend_loc < height
 
-    if bend_dir is Bend_Direction.Back or Bend_Direction.Front:
+    if bend_dir is Bend_Direction.Back or bend_dir is Bend_Direction.Front:
         assert bend_height <= width/2
-    elif bend_dir is Bend_Direction.Left or Bend_Direction.Right:
+    elif bend_dir is Bend_Direction.Left or bend_dir is Bend_Direction.Right:
         assert bend_height < width
     else:
         print("error")
@@ -528,7 +538,7 @@ def test_tube_bent(width, height, bend_loc, bend_height, bend_dir, carrier:int=3
         #center_bend_helper(width, bend_height, c1, machine_state, carriage_passes, instructions)
     elif bend_dir is Bend_Direction.Right:
         right_bend_helper(width, bend_height, c1, machine_state, carriage_passes, instructions)
-    elif bend_dir is Bend_Direction.Back or Bend_Direction.Front:
+    elif bend_dir is Bend_Direction.Back or bend_dir is Bend_Direction.Front:
         iso_bend_helper(width, bend_height, bend_dir, c1, machine_state, carriage_passes, instructions)
     else:
         print("error")
@@ -548,12 +558,12 @@ def test_multi_bend(width, end, bends, carrier:int=3):
             # ensure bends array is in increasing order
             assert cur.position >= bends[i-1].position
 
-        if cur.bend_dir is Bend_Direction.Back or Bend_Direction.Front:
+        if cur.bend_dir is Bend_Direction.Back or cur.bend_dir is Bend_Direction.Front:
             assert cur.height <= width/2
-        elif cur.bend_dir is Bend_Direction.Left or Bend_Direction.Right:
+        elif cur.bend_dir is Bend_Direction.Left or cur.bend_dir is Bend_Direction.Right:
             assert cur.height < width
         else:
-            raise IOError
+            assert cur.height <= width/2
 
     c1 = Yarn_Carrier(carrier)
     circ = width * 2
@@ -573,6 +583,7 @@ def test_multi_bend(width, end, bends, carrier:int=3):
         bend_dir = cur_bend.bend_dir
         print("cur", cur)
         print("pos", pos)
+        print("bend dir", bend_dir)
         if cur > pos:
             raise RuntimeError
         elif cur < pos:
@@ -581,13 +592,17 @@ def test_multi_bend(width, end, bends, carrier:int=3):
             cur = pos
         # Bent part
         if bend_dir is Bend_Direction.Left:
+            print("o")
             left_bend_helper(width, cur_bend.height, c1, machine_state, carriage_passes, instructions)
         elif bend_dir is Bend_Direction.Right:
+            print("oo")
             right_bend_helper(width, cur_bend.height, c1, machine_state, carriage_passes, instructions)
-        elif bend_dir is Bend_Direction.Back or Bend_Direction.Front:
+        elif bend_dir is Bend_Direction.Back or bend_dir is Bend_Direction.Front:
+            print("ooo")
             iso_bend_helper(width, cur_bend.height, bend_dir, c1, machine_state, carriage_passes, instructions)
         elif bend_dir >= 0 and bend_dir < circ:
             # bend starts in a particular location
+            print("shifted")
             iso_bend_shifted_helper(width, cur_bend.height, c1, machine_state, carriage_passes, instructions, bend_dir)
         else:
             raise AttributeError
@@ -610,8 +625,11 @@ if __name__ == "__main__":
     #test_tube_bent(10, 20, 10, 4, Bend_Direction.Front, 3)
     #test_tube_bent(10, 20, 10, 4, Bend_Direction.Back, 3)
     #test_multi_bend(10, [], [], [], [], 3)
-    b1 = Bend(5, 5, Bend_Direction.Front)
-    b2 = Bend(10, 5, Bend_Direction.Back)
-    test_multi_bend(10, 3, [b1, b2], 3)
+    #b1 = Bend(5, 5, Bend_Direction.Front)
+    #b2 = Bend(10, 5, Bend_Direction.Back)
+    #test_multi_bend(10, 3, [b1, b2], 3)
     # height is measured by full rows, short rows don't count towards height
     # some bends may have the same position
+    b3 = Bend(3, 3, 4)
+    b4 = Bend(6, 3, 9)
+    test_multi_bend(6, 3, [b3, b4], 3)
