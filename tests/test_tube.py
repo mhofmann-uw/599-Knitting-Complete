@@ -4,10 +4,58 @@ from knitting_machine.machine_operations import outhook, miss, rack
 from knitting_machine.operation_sets import Carriage_Pass, Instruction_Type, Instruction_Parameters
 
 class Bend_Direction(Enum):
-    Left = 1
-    Right = 2
-    Back = 3
-    Front = 4
+    Left = "left"
+    Right = "right"
+    Back = "back"
+    Front = "front"
+
+class Bend:
+    """
+    A Simple class structure for representing a bend
+    """
+
+    def __init__(self, position: int, height: int, bend_dir: Bend_Direction):
+        """
+        :param width: width of the short row triangle
+        :param position: where along the length of the snake the bend takes place
+        :param height: how tall the bend is
+        :param bend_dir: which way the bend goes
+        """
+        #self.width: int = width
+        self.position: int = position
+        self.height: int = height
+        self.bend_dir: Bend_Direction = bend_dir
+        #assert self.width is not None
+        assert self.position is not None
+        assert self.height is not None
+        assert self.bend_dir is not None
+    """
+        if bend_dir is Bend_Direction.Back or Bend_Direction.Front:
+            assert height <= width / 2
+        elif bend_dir is Bend_Direction.Left or Bend_Direction.Right:
+            assert height < width
+        else:
+            raise AttributeError
+
+    """
+
+    def __str__(self):
+        return f"bend {self.position}"
+
+    def __repr__(self):
+        return str(self)
+
+    def __hash__(self):
+        return self.position
+
+    def __lt__(self, other):
+        if isinstance(other, Bend):
+            return self.position < other.position
+        elif type(other) is int:
+            return self.position < other
+        else:
+            raise AttributeError
+
 
 def _add_carriage_pass(carriage_pass, carriage_passes, instructions):
     if len(carriage_pass.needles_to_instruction_parameters) > 0:
@@ -377,12 +425,74 @@ def test_tube_bent(width, height, bend_loc, bend_height, bend_dir, carrier:int=3
     _write_instructions("tube_bent.k", instructions)
 
 
+def test_multi_bend(width, end, bends, carrier:int=3):
+    for i in range(0, len(bends)):
+        cur = bends[i]
+        if i > 0:
+            # ensure bends array is in increasing order
+            assert cur.position >= bends[i-1].position
+
+        if cur.bend_dir is Bend_Direction.Back or Bend_Direction.Front:
+            assert cur.height <= width/2
+        elif cur.bend_dir is Bend_Direction.Left or Bend_Direction.Right:
+            assert cur.height < width
+        else:
+            raise IOError
+
+    c1 = Yarn_Carrier(carrier)
+    circ = width * 2
+    """
+    width = circ//2
+    if circ % 2 == 1:
+        width = circ//2+1
+    """
+    height = bends[len(bends)-1].position + end + 1
+    carriage_passes, instructions, machine_state = _cast_on_round(c1, c1, start_needle=0, end_needle=width)
+    instructions.append(rack(machine_state, -.75))  # rack for all needle knitting
+
+    cur = 0
+    for i in range(0, len(bends)):
+        cur_bend = bends[i]
+        pos = cur_bend.position
+        bend_dir = cur_bend.bend_dir
+        print("cur", cur)
+        print("pos", pos)
+        if cur > pos:
+            raise RuntimeError
+        elif cur < pos:
+            # Straight part
+            tube_helper(width, pos-cur, c1, machine_state, carriage_passes, instructions)
+            cur = pos
+        # Bent part
+        if bend_dir is Bend_Direction.Left:
+            left_bend_helper(width, cur_bend.height, c1, machine_state, carriage_passes, instructions)
+        elif bend_dir is Bend_Direction.Right:
+            right_bend_helper(width, cur_bend.height, c1, machine_state, carriage_passes, instructions)
+        elif bend_dir is Bend_Direction.Back or Bend_Direction.Front:
+            iso_bend_helper(width, cur_bend.height, bend_dir, c1, machine_state, carriage_passes, instructions)
+        else:
+            raise AttributeError
+
+    # Straight part
+    if end > 0:
+        tube_helper(width, end, c1, machine_state, carriage_passes, instructions)
+
+    instructions.append(outhook(machine_state, c1))
+
+    _write_instructions("tube_multi_bend.k", instructions)
+
+
 if __name__ == "__main__":
     #test_tube(20, 40, 3)
     #test_tube_bent(10, 40, 20, 3, True, 3)
 
     #test_tube_bent(10, 20, 10, 4, Bend_Direction.Left, 3)
     #test_tube_bent(10, 20, 10, 4, Bend_Direction.Right, 3)
-    test_tube_bent(10, 20, 10, 4, Bend_Direction.Front, 3)
+    #test_tube_bent(10, 20, 10, 4, Bend_Direction.Front, 3)
     #test_tube_bent(10, 20, 10, 4, Bend_Direction.Back, 3)
-
+    #test_multi_bend(10, [], [], [], [], 3)
+    b1 = Bend(5, 5, Bend_Direction.Front)
+    b2 = Bend(10, 5, Bend_Direction.Back)
+    test_multi_bend(10, 3, [b1, b2], 3)
+    # height is measured by full rows, short rows don't count towards height
+    # some bends may have the same position
