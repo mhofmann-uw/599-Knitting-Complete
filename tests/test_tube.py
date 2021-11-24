@@ -1,6 +1,6 @@
 from enum import Enum
 from knitting_machine.Machine_State import Machine_State, Yarn_Carrier, Needle, Pass_Direction
-from knitting_machine.machine_operations import outhook, miss, rack
+from knitting_machine.machine_operations import outhook, rack
 from knitting_machine.operation_sets import Carriage_Pass, Instruction_Type, Instruction_Parameters
 
 class Bend_Direction(Enum):
@@ -16,7 +16,6 @@ class Bend:
 
     def __init__(self, position: int, height: int, bend_dir: Bend_Direction):
         """
-        :param width: width of the short row triangle
         :param position: where along the length of the snake the bend takes place
         :param height: how tall the bend is
         :param bend_dir: which way the bend goes
@@ -210,7 +209,124 @@ def tube_helper(width, height, c1, machine_state, carriage_passes, instructions)
 
 
 """
-adds short rows to the front using this shape
+adds short rows to the bend_dir using this shape
+XXXXXXX
+ XXXXX
+  XXX
+   X
+  XXX
+ XXXXX
+XXXXXXX
+"""
+def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, instructions, bend_shift=0):
+    """
+    :param: bend_shift is an int >= 0 and < width*2 that is where the bend triangle starts.
+    """
+    # map ints to needles
+    needles = []
+    for f in range(width, 0, -1):
+        needles.append(Needle(True, f))
+    for b in range(1, width+1):
+        needles.append(Needle(False, b))
+    indices = dict(list(enumerate(needles)))
+    print(indices)
+
+    # add regular knits up to the place the bend is shifted to
+    for n in range(0, bend_shift):
+        knits = {}
+        if n < width:
+            pass_dir = Pass_Direction.Right_to_Left
+        else:
+            pass_dir = Pass_Direction.Left_to_Right
+        needle = needles[n]
+        knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c1)
+        _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir, knits, machine_state), carriage_passes, instructions)
+    """
+    if bend_shift <= width:
+        knits = {}
+        for n in range(width-1, bend_shift, -1):  # add extras to front up to bend location
+            front_needle = Needle(True, n)
+            knits[front_needle] = Instruction_Parameters(front_needle, involved_loop=-1, carrier=c1)
+        _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, Pass_Direction.Right_to_Left, knits, machine_state), carriage_passes, instructions)
+    else:
+        knits = {}
+        for n in range(width-1, -1, -1):  # add extras to front
+            front_needle = Needle(True, n)
+            knits[front_needle] = Instruction_Parameters(front_needle, involved_loop=-1, carrier=c1)
+        _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, Pass_Direction.Right_to_Left, knits, machine_state), carriage_passes, instructions)
+        knits = {}
+        for n in range(0, bend_shift-width):  # add extras to back up to bend location
+            back_needle = Needle(False, n)
+            knits[back_needle] = Instruction_Parameters(back_needle, involved_loop=-1, carrier=c1)
+        _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, Pass_Direction.Left_to_Right, knits, machine_state), carriage_passes, instructions)
+    """
+    # shrink
+    for row in range(0, height):
+        knits = {}
+        if row % 2 == 0:
+            # RtL
+            for n in range(width-1-row, -1+row, -1): # todo
+                print(n)
+                if n % (width*2) < width:
+                    pass_dir = Pass_Direction.Right_to_Left
+                else:
+                    pass_dir = Pass_Direction.Left_to_Right
+                needle = needles[n % (width*2)]
+                knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c1)
+            _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir, knits, machine_state), carriage_passes, instructions)
+        else:
+            # LtR
+            for n in range(row, width-row): # todo
+                print(n)
+                if n % (width*2) < width:
+                    pass_dir = Pass_Direction.Right_to_Left
+                else:
+                    pass_dir = Pass_Direction.Left_to_Right
+                needle = needles[n % (width*2)]
+                knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c1)
+            _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir.opposite(), knits, machine_state), carriage_passes, instructions)
+        print("newline")
+    # grow
+    # ensure we are starting off in the right direction
+    if height % 2 == 0:
+        even_dir = pass_dir
+        odd_dir = pass_dir.opposite()
+    else:
+        even_dir = pass_dir.opposite()
+        odd_dir = pass_dir
+
+    for row in range(0, height):
+        knits = {}
+        if row % 2 == 0:
+            # even_dir
+            for n in range(width-height+row, -1+height-row-1, -1): # todo
+                print(n)
+                needle = needles[n % (width*2)]
+                knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c1)
+            _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, even_dir, knits, machine_state), carriage_passes, instructions)
+        else:
+            # odd_dir
+            for n in range(height-row-1, width-height+row+1): # todo
+                print(n)
+                needle = needles[n % (width*2)]
+                knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c1)
+            _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, odd_dir, knits, machine_state), carriage_passes, instructions)
+        print("newline")
+    # add extras to complete the round
+    if bend_shift > 0:
+        knits = {}
+        for n in range(bend_shift, width*2):
+            if n < width:
+                pass_dir = Pass_Direction.Right_to_Left
+            else:
+                pass_dir = Pass_Direction.Left_to_Right
+            needle = needles[n]
+            knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c1)
+        _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir, knits, machine_state), carriage_passes, instructions)
+
+
+"""
+adds short rows to the front or back using this shape
 XXXXXXX
  XXXXX
   XXX
@@ -470,6 +586,9 @@ def test_multi_bend(width, end, bends, carrier:int=3):
             right_bend_helper(width, cur_bend.height, c1, machine_state, carriage_passes, instructions)
         elif bend_dir is Bend_Direction.Back or Bend_Direction.Front:
             iso_bend_helper(width, cur_bend.height, bend_dir, c1, machine_state, carriage_passes, instructions)
+        elif bend_dir >= 0 and bend_dir < circ:
+            # bend starts in a particular location
+            iso_bend_shifted_helper(width, cur_bend.height, c1, machine_state, carriage_passes, instructions, bend_dir)
         else:
             raise AttributeError
 
