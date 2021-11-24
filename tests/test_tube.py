@@ -315,30 +315,66 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
     print("middle")
     # grow
     # ensure we are starting off in the right direction
-    if height % 2 == 0:
-        even_dir = pass_dir
-        odd_dir = pass_dir.opposite()
-    else:
-        even_dir = pass_dir.opposite()
-        odd_dir = pass_dir
+    """
+        if height % 2 == 1:
+            starting_dir = pass_dir
+            #odd_dir = pass_dir.opposite()
+        else:
+            starting_dir = pass_dir.opposite()
+            #odd_dir = pass_dir
+    """
 
+    n = bend_shift+width+row-height
+    if n % (width * 2) < width:
+        starting_dir = pass_dir.opposite()
+
+    else:
+        starting_dir = pass_dir
+
+    pass_dir = starting_dir
     for row in range(0, height):
         knits = {}
         if row % 2 == 0:
             # even_dir
-            for n in range(bend_shift+width+row-height, bend_shift-1-row+height, -1):  # might be wrong
+            for n in range(bend_shift+width+row-height, bend_shift-1-row+height-1, -1):  # might be wrong
                 print(n)
+                if n % (width * 2) < width:
+                    pass_dir = starting_dir
+                else:
+                    pass_dir = starting_dir.opposite()
                 needle = needles[n % (width*2)]
                 knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c1)
-            _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, even_dir, knits, machine_state), carriage_passes, instructions)
+                print(needle, pass_dir)
+                # if at about to change dirs, do a carriage pass
+                if should_switch_directions(n, width, pass_dir):
+                    _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir, knits, machine_state),
+                                       carriage_passes, instructions)
+                    knits = {}
+                    print("change dir")
+            _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir, knits, machine_state),
+                               carriage_passes, instructions)
+
         else:
             # odd_dir
-            for n in range(bend_shift-row+height, bend_shift+width+row+1-height):  # might be wrong
+            for n in range(bend_shift-row+height-1, bend_shift+width+row+1-height):  # might be wrong
                 print(n)
+                if n % (width * 2) < width:
+                    pass_dir = starting_dir
+                else:
+                    pass_dir = starting_dir.opposite()
                 needle = needles[n % (width*2)]
                 knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c1)
-            _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, odd_dir, knits, machine_state), carriage_passes, instructions)
+                print(needle, pass_dir.opposite())
+                # if at about to change dirs, do a carriage pass
+                if should_switch_directions(n, width, pass_dir.opposite()):
+                    _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir.opposite(), knits, machine_state),
+                                       carriage_passes, instructions)
+                    knits = {}
+                    print("change dir")
+            _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir.opposite(), knits, machine_state),
+                               carriage_passes, instructions)
         print("newline")
+
     # add extras to complete the round
     if bend_shift > 0:
         knits = {}
