@@ -240,8 +240,8 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
     instructions.append("starting pres")
 
     # add regular knits up to the place the bend is shifted to
+    knits = {}
     for n in range(0, bend_shift):
-        knits = {}
         print(n)
         if n < width:
             pass_dir = Pass_Direction.Right_to_Left
@@ -249,7 +249,12 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
             pass_dir = Pass_Direction.Left_to_Right
         needle = needles[n]
         knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c1)
-        _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir, knits, machine_state), carriage_passes, instructions)
+        # if at about to change dirs, do a carriage pass
+        if should_switch_directions(n, width, pass_dir):
+            _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir, knits, machine_state),
+                               carriage_passes, instructions)
+            knits = {}
+    _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir, knits, machine_state), carriage_passes, instructions)
     print("pres end")
     instructions.append("done w pres")
 
@@ -384,14 +389,18 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
         instructions.append("starting posts")
         knits = {}
         for n in range(bend_shift+1, width*2):
-            knits = {}
             if n < width:
                 pass_dir = Pass_Direction.Right_to_Left
             else:
                 pass_dir = Pass_Direction.Left_to_Right
             needle = needles[n]
             knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c1)
-            _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir, knits, machine_state), carriage_passes, instructions)
+            # if at about to change dirs, do a carriage pass
+            if should_switch_directions(n, width, pass_dir.opposite()):
+                _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir.opposite(), knits, machine_state),
+                                   carriage_passes, instructions)
+                knits = {}
+        _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir, knits, machine_state), carriage_passes, instructions)
         instructions.append("done w posts")
 
 
@@ -673,7 +682,7 @@ def test_multi_bend(width, end, bends, carrier:int=3):
 
     instructions.append(outhook(machine_state, c1))
 
-    _write_instructions("tube_multi_bend.k", instructions)
+    _write_instructions("tube_multi_bend_shifted.k", instructions)
 
 
 if __name__ == "__main__":
