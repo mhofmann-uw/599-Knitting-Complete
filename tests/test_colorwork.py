@@ -231,7 +231,7 @@ def test_birdseye():
                 front_needle = Needle(True, n)
                 back_needle = Needle(False, n)
                 c2_knits[front_needle] = Instruction_Parameters(front_needle, involved_loop=-1, carrier=c2)
-                if n % 2 == 0:
+                if n % 2 == 1:
                     c1_knits[back_needle] = Instruction_Parameters(back_needle, involved_loop=-1, carrier=c1)
                 else:
                     c2_knits[back_needle] = Instruction_Parameters(back_needle, involved_loop=-1, carrier=c2)
@@ -242,7 +242,7 @@ def test_birdseye():
                 front_needle = Needle(True, n)
                 back_needle = Needle(False, n)
                 c2_knits[front_needle] = Instruction_Parameters(front_needle, involved_loop=-1, carrier=c2)
-                if n % 2 == 1:
+                if n % 2 == 0:
                     c1_knits[back_needle] = Instruction_Parameters(back_needle, involved_loop=-1, carrier=c1)
                 else:
                     c2_knits[back_needle] = Instruction_Parameters(back_needle, involved_loop=-1, carrier=c2)
