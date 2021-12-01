@@ -3,19 +3,49 @@ import tkinter as tk
 from tkinter import *
 from typing import Optional, List, Tuple, Dict, Union, Set
 
+#https://realpython.com/python-gui-tkinter/
+#https://www.tutorialspoint.com/python/python_gui_programming.htm
+
+def place_bend(e):
+    r = 5
+    #x, y = e.x, e.y
+    if e.x % 10 < 5:
+        x = (e.x//10)*10
+    else:
+        x = (e.x//10+1)*10
+    if e.y % 10 < 5:
+        y = (e.y//10)*10
+    else:
+        y = (e.y//10+1)*10
+    circ = C.create_oval(x - r, y - r, x + r, y + r, fill="green")
+
 def set_width(e):
     width = w.get()
     print(width)
     x0, y0, x1, y1 = C.coords(rect)
-    x1 = 10 * float(e)
+    x1 = 10 + 10 * float(e)
     C.coords(rect, x0, y0, x1, y1)
+    """
+        for n in range(0, int(e)):
+        C.create_line(10+n*10, 10, 10+n*10, 30)
+    for m in range(0, (y1-10)//10):
+        C.create_line(10, 10+m*10, 10+10*w.get(), 10+m*10)
+    """
+
 
 def set_height(e):
     height = h.get()
     print(height)
     x0, y0, x1, y1 = C.coords(rect)
-    y1 = 10 * float(e)
+    y1 = 10 + 10 * float(e)
     C.coords(rect, x0, y0, x1, y1)
+    """
+        for n in range(0, 8):
+        C.create_line(10+n*10, 10, 10+n*10, 30)
+    for m in range(0, 2):
+        C.create_line(10, 10+m*10, 90, 10+m*10)
+    """
+
 
 
 def write_slogan():
@@ -79,8 +109,14 @@ if __name__ == "__main__":
     coord = 10, 50, 240, 210
     arc = C.create_arc(coord, start=0, extent=150, fill="red")
     rect = C.create_rectangle(10, 10, 90, 30, fill="yellow")
+    for n in range(0, 40):
+        C.create_line(10+n*10, 10, 10+n*10, 410)
+    for m in range(0, 40):
+        C.create_line(10, 10+m*10, 410, 10+m*10)
 
     C.pack()
+
+    C.bind('<Button-1>', place_bend)
 
     #tube.pack(fill=tk.Y, side=tk.LEFT)
 
