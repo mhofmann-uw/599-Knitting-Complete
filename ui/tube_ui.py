@@ -1,0 +1,91 @@
+from tests.test_tube import test_multi_bend, Bend
+import tkinter as tk
+from tkinter import *
+from typing import Optional, List, Tuple, Dict, Union, Set
+
+def set_height(self):
+    height = h.get()
+    print(height)
+
+def write_slogan():
+    print("Tkinter is easy to use!")
+
+def adjust_params():
+    if bends and len(bends) > 0:
+        bends = bends.sort()
+        end_len = h.get()-bends[len(bends)-1].position
+    else:
+        end_len = h.get()
+
+    export_knitout(width//2, end_len, bends, E1.get())
+
+def export_tube():
+    print(h.get())
+    test_multi_bend(width, h.get(), [], E1.get(), 3)
+    print("No bends")
+    print(E1.get())
+
+def export_knitout(w: int, end_len: int, b: List[Bend], fn):
+    test_multi_bend(w, end_len, b, fn, 3)
+    print("Snek")
+    print(fn)
+
+if __name__ == "__main__":
+    width = 10
+    #height = 2
+    bends: [Bend] = []
+    filename = "snek"
+
+    window = tk.Tk()
+    top = tk.Frame(master=window)
+    top.pack()
+
+    instructions = StringVar()
+    label = Label(top, textvariable=instructions, justify=LEFT)
+    instructions.set("Welcome to Snake Designer!\nPick your height and width.\nClick on the tube to place bends.\nPretend that the left and right edges of the rectangle are connected to form a tube.\nClick KNIT to generate the Knitout file for your snake!\n")
+    label.pack()
+
+    #text = Text(top, wrap=WORD, height=8)
+    #text.insert(INSERT, "Welcome to Snake Designer! \n")
+    #text.insert(END, "Pick your height and width. \n")
+    #text.insert(END, "Click on the tube to place bends. \n")
+    #text.insert(END, "Pretend that the left and right edges of the rectangle are connected to form a tube. \n")
+    #text.insert(END, "Click KNIT to generate the Knitout file for your snake!\n")
+    #text.pack()
+
+    tube = tk.Frame(master=window)
+    tube.pack()
+
+    h = IntVar()
+    scale = Scale(tube, variable=h, from_=2, to=100, length=400, resolution=2, orient=VERTICAL, label="num of rows", command=set_height)
+    scale.pack(side=LEFT)
+
+    C = tk.Canvas(tube, bg="blue", height=400, width=400)
+    coord = 10, 50, 240, 210
+    arc = C.create_arc(coord, start=0, extent=150, fill="red")
+    rect = C.create_polygon(10, 10, 10, 20, 20, 20, 20, 10, fill="yellow")
+    C.pack()
+
+    #tube.pack(fill=tk.Y, side=tk.LEFT)
+
+    btm = tk.Frame(master=window)
+    btm.pack()
+
+    L1 = Label(btm, text="File Name")
+    L1.pack(side=LEFT)
+    E1 = Entry(btm, bd=5, textvariable=filename)
+    E1.pack(side=LEFT)
+
+    if len(bends) > 0:
+        btn = Button(btm, text="KNIT", command=adjust_params)
+    else:
+        btn = Button(btm, text="KNIT", command=export_tube)
+
+    btn.pack(side=RIGHT)
+
+    window.mainloop()
+
+    #test_multi_bend(10, 5, [Bend(6, 5, 0), Bend(11, 5, 6), Bend(16, 5, 0), Bend(21, 5, 6)], "largecentered4bends", 3)
+    #test_multi_bend(10, 5, [Bend(11, 5, 0), Bend(16, 5, 6), Bend(26, 5, 4), Bend(31, 5, 9)], "largeshifted4bends", 3)
+
+

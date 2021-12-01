@@ -433,18 +433,21 @@ def left_bend_helper(width, height, c1, machine_state, carriage_passes, instruct
 
 
 def test_multi_bend(width, end, bends, file, carrier:int=3):
-    for i in range(0, len(bends)):
-        cur = bends[i]
-        if i > 0:
-            # ensure bends array is in increasing order
-            assert cur.position >= bends[i-1].position
+    if len(file) < 1:
+        file = "snek"
+    if bends:
+        for i in range(0, len(bends)):
+            cur = bends[i]
+            if i > 0:
+                # ensure bends array is in increasing order
+                assert cur.position >= bends[i-1].position
 
-        if cur.bend_dir is Bend_Direction.Back or cur.bend_dir is Bend_Direction.Front:
-            assert cur.height <= width/2
-        elif cur.bend_dir is Bend_Direction.Left or cur.bend_dir is Bend_Direction.Right:
-            assert cur.height < width
-        else:
-            assert cur.height <= width/2
+            if cur.bend_dir is Bend_Direction.Back or cur.bend_dir is Bend_Direction.Front:
+                assert cur.height <= width/2
+            elif cur.bend_dir is Bend_Direction.Left or cur.bend_dir is Bend_Direction.Right:
+                assert cur.height < width
+            else:
+                assert cur.height <= width/2
 
     c1 = Yarn_Carrier(carrier)
     circ = width * 2
@@ -453,39 +456,40 @@ def test_multi_bend(width, end, bends, file, carrier:int=3):
     if circ % 2 == 1:
         width = circ//2+1
     """
-    height = bends[len(bends)-1].position + end + 1
+    #height = bends[len(bends)-1].position + end + 1
     carriage_passes, instructions, machine_state = _cast_on_round(c1, c1, start_needle=0, end_needle=width)
     #instructions.append(rack(machine_state, -.75))  # rack for all needle knitting
 
     cur = 0
-    for i in range(0, len(bends)):
-        cur_bend = bends[i]
-        pos = cur_bend.position
-        bend_dir = cur_bend.bend_dir
-        print("cur", cur)
-        print("pos", pos)
-        print("bend dir", bend_dir)
-        if cur > pos:
-            raise RuntimeError
-        elif cur < pos:
-            # Straight part
-            tube_helper(width, pos-cur, c1, machine_state, carriage_passes, instructions)
-            cur = pos
-        # Bent part
-        if bend_dir is Bend_Direction.Left:
-            left_bend_helper(width, cur_bend.height, c1, machine_state, carriage_passes, instructions)
-        elif bend_dir is Bend_Direction.Right:
-            right_bend_helper(width, cur_bend.height, c1, machine_state, carriage_passes, instructions)
-        elif bend_dir is Bend_Direction.Front:
-            iso_bend_shifted_helper(width, cur_bend.height, c1, machine_state, carriage_passes, instructions, 0)
-        elif bend_dir is Bend_Direction.Back:
-            iso_bend_shifted_helper(width, cur_bend.height, c1, machine_state, carriage_passes, instructions, width)
-        elif bend_dir >= 0 and bend_dir < circ:
-            # bend starts in a particular location
-            print("shifted")
-            iso_bend_shifted_helper(width, cur_bend.height, c1, machine_state, carriage_passes, instructions, bend_dir)
-        else:
-            raise AttributeError
+    if bends:
+        for i in range(0, len(bends)):
+            cur_bend = bends[i]
+            pos = cur_bend.position
+            bend_dir = cur_bend.bend_dir
+            print("cur", cur)
+            print("pos", pos)
+            print("bend dir", bend_dir)
+            if cur > pos:
+                raise RuntimeError
+            elif cur < pos:
+                # Straight part
+                tube_helper(width, pos-cur, c1, machine_state, carriage_passes, instructions)
+                cur = pos
+            # Bent part
+            if bend_dir is Bend_Direction.Left:
+                left_bend_helper(width, cur_bend.height, c1, machine_state, carriage_passes, instructions)
+            elif bend_dir is Bend_Direction.Right:
+                right_bend_helper(width, cur_bend.height, c1, machine_state, carriage_passes, instructions)
+            elif bend_dir is Bend_Direction.Front:
+                iso_bend_shifted_helper(width, cur_bend.height, c1, machine_state, carriage_passes, instructions, 0)
+            elif bend_dir is Bend_Direction.Back:
+                iso_bend_shifted_helper(width, cur_bend.height, c1, machine_state, carriage_passes, instructions, width)
+            elif bend_dir >= 0 and bend_dir < circ:
+                # bend starts in a particular location
+                print("shifted")
+                iso_bend_shifted_helper(width, cur_bend.height, c1, machine_state, carriage_passes, instructions, bend_dir)
+            else:
+                raise AttributeError
 
     # Straight part
     if end > 0:
