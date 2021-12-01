@@ -3,9 +3,20 @@ import tkinter as tk
 from tkinter import *
 from typing import Optional, List, Tuple, Dict, Union, Set
 
-def set_height(self):
+def set_width(e):
+    width = w.get()
+    print(width)
+    x0, y0, x1, y1 = C.coords(rect)
+    x1 = 10 * float(e)
+    C.coords(rect, x0, y0, x1, y1)
+
+def set_height(e):
     height = h.get()
     print(height)
+    x0, y0, x1, y1 = C.coords(rect)
+    y1 = 10 * float(e)
+    C.coords(rect, x0, y0, x1, y1)
+
 
 def write_slogan():
     print("Tkinter is easy to use!")
@@ -17,11 +28,11 @@ def adjust_params():
     else:
         end_len = h.get()
 
-    export_knitout(width//2, end_len, bends, E1.get())
+    export_knitout(w.get()//2, end_len, bends, E1.get())
 
 def export_tube():
     print(h.get())
-    test_multi_bend(width, h.get(), [], E1.get(), 3)
+    test_multi_bend(w.get()//2, h.get(), [], E1.get(), 3)
     print("No bends")
     print(E1.get())
 
@@ -31,7 +42,7 @@ def export_knitout(w: int, end_len: int, b: List[Bend], fn):
     print(fn)
 
 if __name__ == "__main__":
-    width = 10
+    #width = 10
     #height = 2
     bends: [Bend] = []
     filename = "snek"
@@ -56,14 +67,19 @@ if __name__ == "__main__":
     tube = tk.Frame(master=window)
     tube.pack()
 
+    w = IntVar()
+    scale = Scale(tube, variable=w, from_=8, to=40, length=400, resolution=2, orient=HORIZONTAL, label="circumference", command=set_width)
+    scale.pack(side=TOP)
+
     h = IntVar()
-    scale = Scale(tube, variable=h, from_=2, to=100, length=400, resolution=2, orient=VERTICAL, label="num of rows", command=set_height)
+    scale = Scale(tube, variable=h, from_=2, to=40, length=400, resolution=1, orient=VERTICAL, label="num of rows", command=set_height)
     scale.pack(side=LEFT)
 
-    C = tk.Canvas(tube, bg="blue", height=400, width=400)
+    C = tk.Canvas(tube, bg="blue", height=500, width=500)
     coord = 10, 50, 240, 210
     arc = C.create_arc(coord, start=0, extent=150, fill="red")
-    rect = C.create_polygon(10, 10, 10, 20, 20, 20, 20, 10, fill="yellow")
+    rect = C.create_rectangle(10, 10, 90, 30, fill="yellow")
+
     C.pack()
 
     #tube.pack(fill=tk.Y, side=tk.LEFT)
