@@ -174,9 +174,9 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
         else:
             pass_dir = Pass_Direction.Left_to_Right
         needle = needles[n]
-        knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c1)
+        knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c1, comment="course num")
         # if at about to change dirs, do a carriage pass
-        if should_switch_directions(n, width, pass_dir):
+        if n < bend_shift-1 and should_switch_directions(n, width, pass_dir):
             _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir, knits, machine_state),
                                carriage_passes, instructions)
             knits = {}
@@ -216,10 +216,10 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
                 else:
                     pass_dir = Pass_Direction.Left_to_Right
                 needle = needles[n % (width * 2)]
-                knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c1)
+                knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c1, comment="course num")
                 print(needle, pass_dir)
                 # if at about to change dirs, do a carriage pass
-                if should_switch_directions(n, width, pass_dir):
+                if n < bend_shift + width - row-1 and should_switch_directions(n, width, pass_dir):
                     _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir, knits, machine_state),
                                        carriage_passes, instructions)
                     knits = {}
@@ -236,10 +236,10 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
                 else:
                     pass_dir = Pass_Direction.Left_to_Right
                 needle = needles[n % (width*2)]
-                knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c1)
+                knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c1, comment="course num")
                 print(needle, pass_dir.opposite())
                 # if at about to change dirs, do a carriage pass
-                if should_switch_directions(n, width, pass_dir.opposite()):
+                if n > bend_shift-1+row+1 and should_switch_directions(n, width, pass_dir.opposite()):
                     _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir.opposite(), knits, machine_state),
                                        carriage_passes, instructions)
                     knits = {}
@@ -257,12 +257,17 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
         else:
             starting_dir = pass_dir.opposite()
             #odd_dir = pass_dir
-    """
-
+    
     n = bend_shift+width+row-height
     if n % (width * 2) < width:
         starting_dir = pass_dir.opposite()
 
+    else:
+        starting_dir = pass_dir
+    """
+
+    if height % 2 == 1:
+        starting_dir = pass_dir.opposite()
     else:
         starting_dir = pass_dir
 
@@ -281,7 +286,7 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
                 knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c1)
                 print(needle, pass_dir)
                 # if at about to change dirs, do a carriage pass
-                if should_switch_directions(n, width, pass_dir):
+                if n > bend_shift-1-row+height-1+1 and should_switch_directions(n, width, pass_dir):
                     _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir, knits, machine_state),
                                        carriage_passes, instructions)
                     knits = {}
@@ -294,14 +299,14 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
             for n in range(bend_shift-row+height-1, bend_shift+width+row+1-height):  # might be wrong
                 print(n)
                 if n % (width * 2) < width:
-                    pass_dir = starting_dir
-                else:
                     pass_dir = starting_dir.opposite()
+                else:
+                    pass_dir = starting_dir
                 needle = needles[n % (width*2)]
                 knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c1)
                 print(needle, pass_dir.opposite())
                 # if at about to change dirs, do a carriage pass
-                if should_switch_directions(n, width, pass_dir.opposite()):
+                if n < bend_shift+width+row+1-height-1 and should_switch_directions(n, width, pass_dir.opposite()):
                     _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir.opposite(), knits, machine_state),
                                        carriage_passes, instructions)
                     knits = {}
@@ -322,7 +327,7 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
             needle = needles[n]
             knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c1)
             # if at about to change dirs, do a carriage pass
-            if should_switch_directions(n, width, pass_dir.opposite()):
+            if n < width*2-1 and should_switch_directions(n, width, pass_dir.opposite()):
                 _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir.opposite(), knits, machine_state),
                                    carriage_passes, instructions)
                 knits = {}
@@ -523,7 +528,13 @@ if __name__ == "__main__":
     #test_multi_bend(10, 5, [Bend(6, 5, 4), Bend(11, 5, 9)], "largeshifted", 3)
     #test_multi_bend(10, 1, [Bend(1, 5, 0), Bend(1, 5, 6), Bend(1, 5, 0), Bend(1, 5, 6)], "consecutive", 3)
     #test_multi_bend(10, 1, [Bend(1, 5, 0), Bend(1, 5, 3), Bend(1, 5, 6), Bend(1, 5, 9)], "consecutive_shifted", 3)
-    test_multi_bend(10, 5, [Bend(6, 5, 0), Bend(11, 5, 6), Bend(16, 5, 0), Bend(21, 5, 6)], "largecentered4bends", 3)
-    test_multi_bend(10, 5, [Bend(11, 5, 0), Bend(16, 5, 6), Bend(26, 5, 4), Bend(31, 5, 9)], "largeshifted4bends", 3)
+    #test_multi_bend(10, 5, [Bend(6, 5, 0), Bend(11, 5, 6), Bend(16, 5, 0), Bend(21, 5, 6)], "largecentered4bends", 3)
+    #test_multi_bend(10, 5, [Bend(11, 5, 0), Bend(16, 5, 6), Bend(26, 5, 4), Bend(31, 5, 9)], "largeshifted4bends", 3)
+
+    #to knit
+    #test_multi_bend(16, 5, [Bend(2, 8, 0), Bend(4, 8, 6), Bend(6, 8, 0), Bend(8, 8, 6), Bend(10, 8, 0), Bend(12, 8, 6)], "largercentered6bends", 3)
+    #test_multi_bend(16, 5, [Bend(2, 8, 0), Bend(4, 8, 0), Bend(6, 8, 0), Bend(8, 8, 0), Bend(10, 8, 0), Bend(12, 8, 0), Bend(14, 8, 0), Bend(16, 8, 0), Bend(18, 8, 0)], "bendonself", 3)
+    #test_multi_bend(16, 5, [Bend(5, 1, 0), Bend(10, 2, 0), Bend(15, 3, 0), Bend(20, 4, 0), Bend(25, 5, 0), Bend(30, 6, 0), Bend(35, 7, 0), Bend(40, 8, 0)], "diffheightscommented", 3)
+    test_multi_bend(16, 2, [Bend(2, 1, 0), Bend(4, 2, 0)], "smalldiffheightscommented", 3)
 
 
