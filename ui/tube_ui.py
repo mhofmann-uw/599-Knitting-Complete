@@ -18,6 +18,9 @@ def place_bend(e):
     else:
         y = (e.y//10+1)*10
     circ = C.create_oval(x - r, y - r, x + r, y + r, fill="green")
+    print(x//10-1)
+    print(y//10-1)
+    bends.append(Bend(x//10-1, y//10-1, 4))
 
 def set_width(e):
     width = w.get()
@@ -61,10 +64,10 @@ def adjust_params():
     export_knitout(w.get()//2, end_len, bends, E1.get())
 
 def export_tube():
-    print(h.get())
+    #print(h.get())
     test_multi_bend(w.get()//2, h.get(), [], E1.get(), 3)
     print("No bends")
-    print(E1.get())
+    #print(E1.get())
 
 def export_knitout(w: int, end_len: int, b: List[Bend], fn):
     test_multi_bend(w, end_len, b, fn, 3)
