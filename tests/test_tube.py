@@ -247,21 +247,25 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
     else:
         starting_dir = pass_dir
     """
+    dr = bend_shift+width+row-height
 
-    if height % 2 == 1:
-        starting_dir = pass_dir.opposite()
-        pass_dir = starting_dir
+    #if dr % (width * 2) < width:
+    if height % 2 == 0:
+        #starting_dir = Pass_Direction.Right_to_Left
+        #pass_dir = starting_dir
         for row in range(0, height):
             knits = {}
             if row % 2 == 0:
-                # even_dir
+                # clockwise
                 for n in range(bend_shift + width + row - height, bend_shift - 1 - row + height - 1,
                                -1):  # might be wrong
                     print(n)
                     if n % (width * 2) < width:
-                        pass_dir = starting_dir
+                        #pass_dir = starting_dir
+                        pass_dir = Pass_Direction.Right_to_Left
                     else:
-                        pass_dir = starting_dir.opposite()
+                        #pass_dir = starting_dir.opposite
+                        pass_dir = Pass_Direction.Left_to_Right
                     needle = needles[n % (width * 2)]
                     knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c1)
                     print(needle, pass_dir)
@@ -269,19 +273,22 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
                     if n > bend_shift - 1 - row + height - 1 + 1 and should_switch_directions(n, width, pass_dir):
                         _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir, knits, machine_state),
                                            carriage_passes, instructions)
+                        instructions.append("dir change")
                         knits = {}
                         print("change dir")
                 _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir, knits, machine_state),
                                    carriage_passes, instructions)
-
+                instructions.append("this is an even row for an even height")
             else:
-                # odd_dir
+                # counter clockwise
                 for n in range(bend_shift - row + height - 1, bend_shift + width + row + 1 - height):  # might be wrong
                     print(n)
                     if n % (width * 2) < width:
-                        pass_dir = starting_dir.opposite()
+                        #pass_dir = starting_dir.opposite()
+                        pass_dir = Pass_Direction.Right_to_Left
                     else:
-                        pass_dir = starting_dir
+                        #pass_dir = starting_dir
+                        pass_dir = Pass_Direction.Left_to_Right
                     needle = needles[n % (width * 2)]
                     knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c1)
                     print(needle, pass_dir.opposite())
@@ -291,23 +298,30 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
                         _add_carriage_pass(
                             Carriage_Pass(Instruction_Type.Knit, pass_dir.opposite(), knits, machine_state),
                             carriage_passes, instructions)
+                        instructions.append("dir change")
                         knits = {}
                         print("change dir")
                 _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir.opposite(), knits, machine_state),
                                    carriage_passes, instructions)
+                instructions.append("this is an odd row for an even height")
             print("newline")
+
     else:
+        #starting_dir = Pass_Direction.Left_to_Right
+        #pass_dir = starting_dir
         for row in range(0, height):
             knits = {}
             if row % 2 == 0:
-                # even_dir
+                # counter clockwise
                 for n in range(bend_shift + width + row - height, bend_shift - 1 - row + height - 1,
                                -1):  # might be wrong
                     print(n)
                     if n % (width * 2) < width:
-                        pass_dir = starting_dir
+                        #pass_dir = starting_dir
+                        pass_dir = Pass_Direction.Left_to_Right
                     else:
-                        pass_dir = starting_dir.opposite()
+                        #pass_dir = starting_dir.opposite()
+                        pass_dir = Pass_Direction.Right_to_Left
                     needle = needles[n % (width * 2)]
                     knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c1)
                     print(needle, pass_dir)
@@ -315,19 +329,23 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
                     if n > bend_shift - 1 - row + height - 1 + 1 and should_switch_directions(n, width, pass_dir):
                         _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir, knits, machine_state),
                                            carriage_passes, instructions)
+                        instructions.append("dir change")
                         knits = {}
                         print("change dir")
                 _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir, knits, machine_state),
                                    carriage_passes, instructions)
+                instructions.append("this is an even row for an odd height")
 
             else:
-                # odd_dir
+                # clockwise
                 for n in range(bend_shift - row + height - 1, bend_shift + width + row + 1 - height):  # might be wrong
                     print(n)
                     if n % (width * 2) < width:
-                        pass_dir = starting_dir.opposite()
+                        #pass_dir = starting_dir.opposite()
+                        pass_dir = Pass_Direction.Left_to_Right
                     else:
-                        pass_dir = starting_dir
+                        #pass_dir = starting_dir
+                        pass_dir = Pass_Direction.Right_to_Left
                     needle = needles[n % (width * 2)]
                     knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=c1)
                     print(needle, pass_dir.opposite())
@@ -337,10 +355,12 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
                         _add_carriage_pass(
                             Carriage_Pass(Instruction_Type.Knit, pass_dir.opposite(), knits, machine_state),
                             carriage_passes, instructions)
+                        instructions.append("dir change")
                         knits = {}
                         print("change dir")
                 _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir.opposite(), knits, machine_state),
                                    carriage_passes, instructions)
+                instructions.append("this is an odd row for an odd height")
             print("newline")
 
 
@@ -426,6 +446,11 @@ if __name__ == "__main__":
     #test_multi_bend(16, 5, [Bend(2, 8, 0), Bend(4, 8, 6), Bend(6, 8, 0), Bend(8, 8, 6), Bend(10, 8, 0), Bend(12, 8, 6)], "largercentered6bends", 3)
     #test_multi_bend(16, 5, [Bend(2, 8, 0), Bend(4, 8, 0), Bend(6, 8, 0), Bend(8, 8, 0), Bend(10, 8, 0), Bend(12, 8, 0), Bend(14, 8, 0), Bend(16, 8, 0), Bend(18, 8, 0)], "bendonself", 3)
     #test_multi_bend(16, 5, [Bend(5, 1, 0), Bend(10, 2, 0), Bend(15, 3, 0), Bend(20, 4, 0), Bend(25, 5, 0), Bend(30, 6, 0), Bend(35, 7, 0), Bend(40, 8, 0)], "diffheightscommented", 3)
-    test_multi_bend(16, 2, [Bend(2, 1, 0), Bend(4, 2, 0)], "smalldiffheightscommented", 3)
+    #test_multi_bend(16, 2, [Bend(2, 1, 0), Bend(4, 2, 0)], "smalldiffheightscommented", 3)
+
+    test_multi_bend(10, 2, [Bend(2, 2, 0), Bend(4, 4, 0)], "smalldiffheightsevens", 3)
+    test_multi_bend(10, 2, [Bend(2, 1, 0), Bend(4, 3, 0), Bend(6, 5, 0)], "smalldiffheightsodds", 3)
+
+
 
 
