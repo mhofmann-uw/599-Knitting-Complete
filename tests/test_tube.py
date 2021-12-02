@@ -184,7 +184,7 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
     print("pres end")
     #instructions.append("done w pres")
 
-    instructions.append("starting short rows")
+    #instructions.append("starting short rows")
 
     # shrink
     for row in range(0, height):
@@ -228,7 +228,7 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
                     print("change dir")
             _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir.opposite(), knits, machine_state), carriage_passes, instructions)
         print("newline")
-    instructions.append("middle")
+    #instructions.append("middle")
     print("middle")
     # grow
     # ensure we are starting off in the right direction
@@ -257,8 +257,9 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
             knits = {}
             if row % 2 == 0:
                 # clockwise
-                for n in range(bend_shift + width + row - height, bend_shift - 1 - row + height - 1,
-                               -1):  # might be wrong
+                for n in range(bend_shift - row + height - 1, bend_shift + width + row + 1 - height):  # might be wrong
+
+
                     print(n)
                     if n % (width * 2) < width:
                         #pass_dir = starting_dir
@@ -273,16 +274,19 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
                     if n > bend_shift - 1 - row + height - 1 + 1 and should_switch_directions(n, width, pass_dir):
                         _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir, knits, machine_state),
                                            carriage_passes, instructions)
-                        instructions.append("dir change")
+                        #instructions.append("dir change")
                         knits = {}
                         print("change dir")
                 _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir, knits, machine_state),
                                    carriage_passes, instructions)
-                instructions.append("this is an even row for an even height")
+                #instructions.append("this is an even row for an even height")
             else:
                 # counter clockwise
-                for n in range(bend_shift - row + height - 1, bend_shift + width + row + 1 - height):  # might be wrong
+                for n in range(bend_shift + width + row - height, bend_shift - 1 - row + height - 1,
+                               -1):  # might be wrong
+
                     print(n)
+                    #instructions.append(str(n)+", ")
                     if n % (width * 2) < width:
                         #pass_dir = starting_dir.opposite()
                         pass_dir = Pass_Direction.Right_to_Left
@@ -298,12 +302,12 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
                         _add_carriage_pass(
                             Carriage_Pass(Instruction_Type.Knit, pass_dir.opposite(), knits, machine_state),
                             carriage_passes, instructions)
-                        instructions.append("dir change")
+                        #instructions.append("dir change")
                         knits = {}
                         print("change dir")
                 _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir.opposite(), knits, machine_state),
                                    carriage_passes, instructions)
-                instructions.append("this is an odd row for an even height")
+                #instructions.append("this is an odd row for an even height")
             print("newline")
 
     else:
@@ -329,12 +333,12 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
                     if n > bend_shift - 1 - row + height - 1 + 1 and should_switch_directions(n, width, pass_dir):
                         _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir, knits, machine_state),
                                            carriage_passes, instructions)
-                        instructions.append("dir change")
+                        #instructions.append("dir change")
                         knits = {}
                         print("change dir")
                 _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir, knits, machine_state),
                                    carriage_passes, instructions)
-                instructions.append("this is an even row for an odd height")
+                #instructions.append("this is an even row for an odd height")
 
             else:
                 # clockwise
@@ -355,16 +359,16 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
                         _add_carriage_pass(
                             Carriage_Pass(Instruction_Type.Knit, pass_dir.opposite(), knits, machine_state),
                             carriage_passes, instructions)
-                        instructions.append("dir change")
+                        #instructions.append("dir change")
                         knits = {}
                         print("change dir")
                 _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, pass_dir.opposite(), knits, machine_state),
                                    carriage_passes, instructions)
-                instructions.append("this is an odd row for an odd height")
+                #instructions.append("this is an odd row for an odd height")
             print("newline")
 
 
-    instructions.append("done with short rows")
+    #instructions.append("done with short rows")
     # add extras to complete the round
     if bend_shift > 0:
         #instructions.append("starting posts")
@@ -443,13 +447,15 @@ def test_multi_bend(width, end, bends, file, carrier:int=3):
 
 if __name__ == "__main__":
     #to knit
-    #test_multi_bend(16, 5, [Bend(2, 8, 0), Bend(4, 8, 6), Bend(6, 8, 0), Bend(8, 8, 6), Bend(10, 8, 0), Bend(12, 8, 6)], "largercentered6bends", 3)
-    #test_multi_bend(16, 5, [Bend(2, 8, 0), Bend(4, 8, 0), Bend(6, 8, 0), Bend(8, 8, 0), Bend(10, 8, 0), Bend(12, 8, 0), Bend(14, 8, 0), Bend(16, 8, 0), Bend(18, 8, 0)], "bendonself", 3)
-    #test_multi_bend(16, 5, [Bend(5, 1, 0), Bend(10, 2, 0), Bend(15, 3, 0), Bend(20, 4, 0), Bend(25, 5, 0), Bend(30, 6, 0), Bend(35, 7, 0), Bend(40, 8, 0)], "diffheightscommented", 3)
-    #test_multi_bend(16, 2, [Bend(2, 1, 0), Bend(4, 2, 0)], "smalldiffheightscommented", 3)
-
     test_multi_bend(10, 2, [Bend(2, 2, 0), Bend(4, 4, 0)], "smalldiffheightsevens", 3)
     test_multi_bend(10, 2, [Bend(2, 1, 0), Bend(4, 3, 0), Bend(6, 5, 0)], "smalldiffheightsodds", 3)
+
+    test_multi_bend(16, 5, [Bend(2, 8, 0), Bend(4, 8, 6), Bend(6, 8, 0), Bend(8, 8, 6), Bend(10, 8, 0), Bend(12, 8, 6)], "largercentered6bends", 3)
+    test_multi_bend(16, 5, [Bend(2, 8, 0), Bend(4, 8, 0), Bend(6, 8, 0), Bend(8, 8, 0), Bend(10, 8, 0), Bend(12, 8, 0), Bend(14, 8, 0), Bend(16, 8, 0), Bend(18, 8, 0)], "bendonself", 3)
+    test_multi_bend(16, 5, [Bend(5, 1, 0), Bend(10, 2, 0), Bend(15, 3, 0), Bend(20, 4, 0), Bend(25, 5, 0), Bend(30, 6, 0), Bend(35, 7, 0), Bend(40, 8, 0)], "diffheights", 3)
+    #test_multi_bend(16, 2, [Bend(2, 1, 0), Bend(4, 2, 0)], "smalldiffheightscommented", 3)
+
+
 
 
 
