@@ -5,8 +5,8 @@ import tkinter as tk
 from tkinter import *
 from typing import Optional, List, Tuple, Dict, Union, Set
 
-#https://realpython.com/python-gui-tkinter/
-#https://www.tutorialspoint.com/python/python_gui_programming.htm
+# https://realpython.com/python-gui-tkinter/
+# https://www.tutorialspoint.com/python/python_gui_programming.htm
 # need to keep map of coordinates to canvas objects so they can be deleted after--nvm, just use find_closest
 
 class Draft_Bend:
@@ -28,7 +28,6 @@ class Draft_Bend:
         assert self.bend_dir is not None
         assert bendiness >= 0
         assert bendiness <= 1
-
 
     def __str__(self):
         return f"bend {self.position} + {self.bendiness} + {self.bend_dir}"
@@ -56,13 +55,12 @@ class Draft_Bend:
 
 def open_menu(col: int, row: int, x: int, y: int, is_new: bool, circ, ring):
     menu = Toplevel(window)
-    menu.grab_set() # stop any interaction until the menu box is closed
+    menu.grab_set()  # stop any interaction until the menu box is closed
     menu.title("Edit bend")
     menu.geometry("200x200")
     Label(menu, text="Edit bend at column "+str(col)+" and row "+str(row)).pack()
 
     def close():
-        #delete ring
         C.delete(ring)
         menu.destroy()
 
@@ -78,12 +76,9 @@ def open_menu(col: int, row: int, x: int, y: int, is_new: bool, circ, ring):
 
     def place():
         if is_new is True:
-            #bends.append(Draft_Bend(y//10-1, bendiness.get(), x//10-1))
             bends[(col, row)] = Draft_Bend(y//10-1, bendiness.get(), x//10-1)
             print(bends)
         else:
-            #bends.remove(???) make sure it's overriden
-            #bends.append(Draft_Bend(y//10-1, bendiness.get(), x//10-1))
             bends[(col, row)] = Draft_Bend(y//10-1, bendiness.get(), x//10-1)
             print(bends)
         close()
@@ -106,7 +101,7 @@ def open_menu(col: int, row: int, x: int, y: int, is_new: bool, circ, ring):
         if is_new is False:
             # print("erase circle")
             C.delete(circ)
-            del bends[(col, row)]# remove bend from array
+            del bends[(col, row)]  # remove bend from array
             close()
 
     if is_new is True:
@@ -119,9 +114,9 @@ def open_menu(col: int, row: int, x: int, y: int, is_new: bool, circ, ring):
 
 
 def clicked_on_existing(row: int):
-    #print(bends)
+    # print(bends)
     for b in bends.values():
-        #print(str(b.position) + "?" + str(row))
+        # print(str(b.position) + "?" + str(row))
         if b.position == row:
             return b
     return None
@@ -129,7 +124,7 @@ def clicked_on_existing(row: int):
 
 def place_bend(e):
     r = 5
-    #x, y = e.x, e.y
+    # x, y = e.x, e.y
     if e.x % 10 < 5:
         x = (e.x//10)*10
     else:
@@ -138,14 +133,14 @@ def place_bend(e):
         y = (e.y//10)*10
     else:
         y = (e.y//10+1)*10
-    #print(rect.coords)
-    #if 410 >= y >= 10 and 410 >= x >= 10:
+    # print(rect.coords)
+    # if 410 >= y >= 10 and 410 >= x >= 10:
     row = y//10-1
     existing = clicked_on_existing(row)
-    #print(existing)
+    # print(existing)
     col = x // 10 - 1
     if existing is not None:
-        #print(str(existing.bend_dir)+"?"+str(col))
+        # print(str(existing.bend_dir)+"?"+str(col))
         if existing.bend_dir == col:
             # bring up height and delete menu
             print("edit")
@@ -157,20 +152,19 @@ def place_bend(e):
             print("move")
         """
 
-
     elif (h.get()*10+10) >= y >= 10 and (w.get()*10+10) >= x >= 10:
         circ = C.create_oval(x - r, y - r, x + r, y + r, fill="green")
         ring = C.create_oval(x - r, y - r, x + r, y + r, outline="pink", width="3")
-        #diamond = C.create_polygon(, fill="gray") todo
-        #print(x//10-1)
-        #print(y//10-1)
-        #bends.append(Draft_Bend(y//10-1, 1, x//10-1))
+        # diamond = C.create_polygon(, fill="gray") todo
+        # print(x//10-1)
+        # print(y//10-1)
+        # bends.append(Draft_Bend(y//10-1, 1, x//10-1))
         open_menu(col, row, x, y, True, circ, ring)
 
 
 def set_width(e):
     width = w.get()
-    #print(width)
+    # print(width)
     x0, y0, x1, y1 = C.coords(rect)
     x1 = 10 + 10 * float(e)
     C.coords(rect, x0, y0, x1, y1)
@@ -185,7 +179,7 @@ def set_width(e):
 
 def set_height(e):
     height = h.get()
-    #print(height)
+    # print(height)
     x0, y0, x1, y1 = C.coords(rect)
     y1 = 10 + 10 * float(e)
     C.coords(rect, x0, y0, x1, y1)
@@ -197,15 +191,14 @@ def set_height(e):
     """
 
 
-
 def write_slogan():
     print("Tkinter is easy to use!")
 
+
 def adjust_params():
-    #switch from draft_bends to bends here by calculating bendiness
+    # switch from draft_bends to bends here by calculating bendiness
     oob = []
     if len(bends.values()) > 0:
-        #bends = bends.sort()
         processed_bends = []
         for b in bends.values():
             if b.bend_dir > w.get() or b.position > h.get():
@@ -214,12 +207,12 @@ def adjust_params():
                 ht = round(b.bendiness*float(w.get()/4))
                 processed_bends.append(Bend(b.position, ht, b.bend_dir))
         print(processed_bends)
-        if len(oob) > 0: # warn if there are bends outside of width
+        if len(oob) > 0:  # warn if there are bends outside of width
             coords = ""
             for b in oob:
                 d = str(b.bend_dir)
                 p = str(b.position)
-                coords+="("+d+", "+p+"), "
+                coords += "("+d+", "+p+"), "
 
             action = messagebox.askokcancel("Warning", "Bends at the following coordinates" + coords + "are outside of the tube and will be ignored")
             if action is True:
@@ -241,23 +234,21 @@ def adjust_params():
 
 
 def export_tube():
-    #print(h.get())
+    # print(h.get())
     test_multi_bend(w.get()//2, h.get(), [], E1.get(), 3)
     print("No bends")
-    #print(E1.get())
+    # print(E1.get())
+
 
 def export_knitout(w: int, end_len: int, b: List[Bend], fn):
     test_multi_bend(w, end_len, b, fn, 3)
     print("Snek")
     print(fn)
 
+
 if __name__ == "__main__":
-    #width = 10
-    #height = 2
-    #bends: [Draft_Bend] = []
-    bends = dict() # map from coordinates to Draft_Bends
+    bends = dict()  # map from coordinates to Draft_Bends
     filename = "snek"
-    #circles:
 
     window = tk.Tk()
     top = tk.Frame(master=window)
@@ -291,7 +282,7 @@ if __name__ == "__main__":
 
     C.bind('<Button-1>', place_bend)
 
-    #tube.pack(fill=tk.Y, side=tk.LEFT)
+    # tube.pack(fill=tk.Y, side=tk.LEFT)
 
     btm = tk.Frame(master=window)
     btm.pack()
