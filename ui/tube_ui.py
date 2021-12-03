@@ -6,6 +6,89 @@ from typing import Optional, List, Tuple, Dict, Union, Set
 #https://realpython.com/python-gui-tkinter/
 #https://www.tutorialspoint.com/python/python_gui_programming.htm
 
+
+class Draft_Bend:
+    """
+    A Simple class structure for representing a draft bend
+    """
+
+    def __init__(self, position: int, bend_factor: float, bend_dir: int):
+        """
+        :param position: where along the length of the snake the bend takes place
+        :param bend_factor: how tall the bend is in a number from 0 to 1
+        :param bend_dir: which way the bend goes
+        """
+        self.position: int = position
+        self.bend_factor: float = bend_factor
+        self.bend_dir: int = bend_dir
+        assert self.position is not None
+        assert self.bend_factor is not None
+        assert self.bend_dir is not None
+        assert bend_factor >= 0
+        assert bend_factor <= 1
+
+
+    def __str__(self):
+        return f"bend {self.position} + {self.bend_factor} + {self.bend_dir}"
+
+    def __repr__(self):
+        return str(self)
+
+    def __hash__(self):
+        return self.position
+
+    def __lt__(self, other):
+        if isinstance(other, Draft_Bend):
+            return self.position < other.position
+        elif type(other) is int:
+            return self.position < other
+        else:
+            raise AttributeError
+
+    def __eq__(self, other):
+        if isinstance(other, Draft_Bend):
+            return self.position == other.position and self.bend_factor == other.bend_factor and self.bend_dir == other.bend_dir
+        else:
+            raise AttributeError
+
+
+def open_menu(col: int, row: int, is_new: bool):
+    menu = Toplevel(window)
+    menu.title("Edit bend")
+    menu.geometry("200x200")
+    Label(menu, text="Edit bend at column "+str(col)+" and row "+str(row)).pack()
+
+    def cancel():
+        menu.destroy()
+
+    cancel_button = Button(menu, text="Cancel", command=cancel)
+    cancel_button.pack(pady=20)
+
+    def remove():
+        menu.destroy()
+        # remove bend from array todo
+        # remove circle from canvas todo
+
+    if is_new:
+        remove_button = Button(menu, text="Remove Bend", command=remove, state=DISABLED)
+    else:
+        remove_button = Button(menu, text="Remove Bend", command=remove)
+
+    remove_button.pack(pady=20)
+
+
+    #todo slidey
+
+
+def clicked_on_existing(row: int):
+    #print(bends)
+    for b in bends:
+        #print(str(b.position) + "?" + str(row))
+        if b.position == row:
+            return b
+    return None
+
+
 def place_bend(e):
     r = 5
     #x, y = e.x, e.y
@@ -17,14 +100,34 @@ def place_bend(e):
         y = (e.y//10)*10
     else:
         y = (e.y//10+1)*10
-    circ = C.create_oval(x - r, y - r, x + r, y + r, fill="green")
-    print(x//10-1)
-    print(y//10-1)
-    bends.append(Bend(x//10-1, y//10-1, 4))
+    #print(rect.coords)
+    #if 410 >= y >= 10 and 410 >= x >= 10:
+    row = y//10-1
+    existing = clicked_on_existing(row)
+    #print(existing)
+    col = x // 10 - 1
+    if existing is not None:
+        #print(str(existing.bend_dir)+"?"+str(col))
+        if existing.bend_dir == col:
+            # bring up height and delete menu
+            print("edit")
+            open_menu(col, row, False)
+        else:
+            # just move the circle todo
+            print("move")
+
+    elif (h.get()*10+10) >= y >= 10 and (w.get()*10+10) >= x >= 10:
+        circ = C.create_oval(x - r, y - r, x + r, y + r, fill="green")
+        #diamond = C.create_polygon(, fill="gray") todo
+        #print(x//10-1)
+        #print(y//10-1)
+        bends.append(Draft_Bend(y//10-1, 1, x//10-1))
+        open_menu(col, row, True)
+
 
 def set_width(e):
     width = w.get()
-    print(width)
+    #print(width)
     x0, y0, x1, y1 = C.coords(rect)
     x1 = 10 + 10 * float(e)
     C.coords(rect, x0, y0, x1, y1)
@@ -34,11 +137,12 @@ def set_width(e):
     for m in range(0, (y1-10)//10):
         C.create_line(10, 10+m*10, 10+10*w.get(), 10+m*10)
     """
+    # todo adjust bend diamond heights
 
 
 def set_height(e):
     height = h.get()
-    print(height)
+    #print(height)
     x0, y0, x1, y1 = C.coords(rect)
     y1 = 10 + 10 * float(e)
     C.coords(rect, x0, y0, x1, y1)
@@ -55,6 +159,8 @@ def write_slogan():
     print("Tkinter is easy to use!")
 
 def adjust_params():
+    #todo: switch from draft_bends to bends here by calculating bendiness
+    # todo: warn if there are bends outside of width
     if bends and len(bends) > 0:
         bends = bends.sort()
         end_len = h.get()-bends[len(bends)-1].position
@@ -77,7 +183,7 @@ def export_knitout(w: int, end_len: int, b: List[Bend], fn):
 if __name__ == "__main__":
     #width = 10
     #height = 2
-    bends: [Bend] = []
+    bends: [Draft_Bend] = []
     filename = "snek"
 
     window = tk.Tk()
@@ -86,16 +192,8 @@ if __name__ == "__main__":
 
     instructions = StringVar()
     label = Label(top, textvariable=instructions, justify=LEFT)
-    instructions.set("Welcome to Snake Designer!\nPick your height and width.\nClick on the tube to place bends.\nPretend that the left and right edges of the rectangle are connected to form a tube.\nClick KNIT to generate the Knitout file for your snake!\n")
+    instructions.set("Welcome to Snake Designer!\nPick your height and width.\nClick on the tube to place bends. There can be at most one bend per row.\nPretend that the left and right edges of the rectangle are connected to form a tube.\nClick KNIT to generate the Knitout file for your snake!\n")
     label.pack()
-
-    #text = Text(top, wrap=WORD, height=8)
-    #text.insert(INSERT, "Welcome to Snake Designer! \n")
-    #text.insert(END, "Pick your height and width. \n")
-    #text.insert(END, "Click on the tube to place bends. \n")
-    #text.insert(END, "Pretend that the left and right edges of the rectangle are connected to form a tube. \n")
-    #text.insert(END, "Click KNIT to generate the Knitout file for your snake!\n")
-    #text.pack()
 
     tube = tk.Frame(master=window)
     tube.pack()
@@ -108,13 +206,12 @@ if __name__ == "__main__":
     scale = Scale(tube, variable=h, from_=2, to=40, length=400, resolution=1, orient=VERTICAL, label="num of rows", command=set_height)
     scale.pack(side=LEFT)
 
-    C = tk.Canvas(tube, bg="blue", height=500, width=500)
+    C = tk.Canvas(tube, bg="blue", height=420, width=420)
     coord = 10, 50, 240, 210
-    arc = C.create_arc(coord, start=0, extent=150, fill="red")
     rect = C.create_rectangle(10, 10, 90, 30, fill="yellow")
-    for n in range(0, 40):
+    for n in range(0, 41):
         C.create_line(10+n*10, 10, 10+n*10, 410)
-    for m in range(0, 40):
+    for m in range(0, 41):
         C.create_line(10, 10+m*10, 410, 10+m*10)
 
     C.pack()
@@ -139,8 +236,5 @@ if __name__ == "__main__":
     btn.pack(side=RIGHT)
 
     window.mainloop()
-
-    #test_multi_bend(10, 5, [Bend(6, 5, 0), Bend(11, 5, 6), Bend(16, 5, 0), Bend(21, 5, 6)], "largecentered4bends", 3)
-    #test_multi_bend(10, 5, [Bend(11, 5, 0), Bend(16, 5, 6), Bend(26, 5, 4), Bend(31, 5, 9)], "largeshifted4bends", 3)
 
 

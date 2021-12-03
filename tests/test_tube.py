@@ -39,7 +39,7 @@ class Bend:
     """
 
     def __str__(self):
-        return f"bend {self.position}"
+        return f"bend {self.position} + {self.height} + {self.bend_dir}"
 
     def __repr__(self):
         return str(self)
@@ -52,6 +52,12 @@ class Bend:
             return self.position < other.position
         elif type(other) is int:
             return self.position < other
+        else:
+            raise AttributeError
+
+    def __eq__(self, other):
+        if isinstance(other, Bend):
+            return self.position == other.position and self.height == other.height and self.bend_dir == other.bend_dir
         else:
             raise AttributeError
 
