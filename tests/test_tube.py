@@ -158,7 +158,8 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
     :param: bend_shift is an int >= 0 and < width*2 that is where the bend triangle starts.
     """
     # map ints to needles
-    #print("width", width)
+
+
     needles = []
     for f in range(width-1, -1, -1):
         needles.append(Needle(True, f))
@@ -253,7 +254,7 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
     else:
         starting_dir = pass_dir
     """
-    dr = bend_shift+width+row-height
+    #dr = bend_shift+width+row-height
 
     #if dr % (width * 2) < width:
     if height % 2 == 0:
@@ -410,6 +411,8 @@ def test_multi_bend(width, end, bends, file, carrier:int=3):
             elif cur.bend_dir is Bend_Direction.Left or cur.bend_dir is Bend_Direction.Right:
                 assert cur.height < width
             else:
+                print(cur.height)
+                print(width)
                 assert cur.height <= width/2
 
     c1 = Yarn_Carrier(carrier)

@@ -8,32 +8,30 @@ from typing import Optional, List, Tuple, Dict, Union, Set
 #https://realpython.com/python-gui-tkinter/
 #https://www.tutorialspoint.com/python/python_gui_programming.htm
 # need to keep map of coordinates to canvas objects so they can be deleted after--nvm, just use find_closest
-# todo need to keep map of coordinates to bends so they can be deleted/edited after
-
 
 class Draft_Bend:
     """
     A Simple class structure for representing a draft bend
     """
 
-    def __init__(self, position: int, bend_factor: float, bend_dir: int):
+    def __init__(self, position: int, bendiness: float, bend_dir: int):
         """
         :param position: where along the length of the snake the bend takes place
-        :param bend_factor: how tall the bend is in a number from 0 to 1
+        :param bendiness: how tall the bend is in a number from 0 to 1
         :param bend_dir: which way the bend goes
         """
         self.position: int = position
-        self.bend_factor: float = bend_factor
+        self.bendiness: float = bendiness
         self.bend_dir: int = bend_dir
         assert self.position is not None
-        assert self.bend_factor is not None
+        assert self.bendiness is not None
         assert self.bend_dir is not None
-        assert bend_factor >= 0
-        assert bend_factor <= 1
+        assert bendiness >= 0
+        assert bendiness <= 1
 
 
     def __str__(self):
-        return f"bend {self.position} + {self.bend_factor} + {self.bend_dir}"
+        return f"bend {self.position} + {self.bendiness} + {self.bend_dir}"
 
     def __repr__(self):
         return str(self)
@@ -51,13 +49,14 @@ class Draft_Bend:
 
     def __eq__(self, other):
         if isinstance(other, Draft_Bend):
-            return self.position == other.position and self.bend_factor == other.bend_factor and self.bend_dir == other.bend_dir
+            return self.position == other.position and self.bendiness == other.bendiness and self.bend_dir == other.bend_dir
         else:
             raise AttributeError
 
 
 def open_menu(col: int, row: int, x: int, y: int, is_new: bool, circ):
     menu = Toplevel(window)
+    menu.grab_set() # stop any interaction until the menu box is closed
     menu.title("Edit bend")
     menu.geometry("200x200")
     Label(menu, text="Edit bend at column "+str(col)+" and row "+str(row)).pack()
@@ -79,7 +78,7 @@ def open_menu(col: int, row: int, x: int, y: int, is_new: bool, circ):
         if is_new is False:
             # print("erase circle")
             C.delete(circ)
-            # remove bend from array todo
+            del bends[(col, row)]# remove bend from array
             close()
 
     if is_new is True:
@@ -94,7 +93,7 @@ def open_menu(col: int, row: int, x: int, y: int, is_new: bool, circ):
             bends[(col, row)] = Draft_Bend(y//10-1, bendiness.get(), x//10-1)
             print(bends)
         else:
-            #bends.remove(???) todo: make sure it's overriden
+            #bends.remove(???) make sure it's overriden
             #bends.append(Draft_Bend(y//10-1, bendiness.get(), x//10-1))
             bends[(col, row)] = Draft_Bend(y//10-1, bendiness.get(), x//10-1)
             print(bends)
@@ -112,7 +111,7 @@ def open_menu(col: int, row: int, x: int, y: int, is_new: bool, circ):
 
 
     #todo set default to be current val
-    bendiness = IntVar()
+    bendiness = DoubleVar()
     scale = Scale(menu, variable=bendiness, from_=0, to=1, resolution=0.01, length=150, orient=HORIZONTAL, label="Bendiness", command=set_bendiness)
     scale.pack(side=TOP)
 
@@ -202,7 +201,6 @@ def write_slogan():
 
 def adjust_params():
     #switch from draft_bends to bends here by calculating bendiness
-    # todo: warn if there are bends outside of width
     oob = []
     if len(bends.values()) > 0:
         #bends = bends.sort()
@@ -210,24 +208,24 @@ def adjust_params():
         for b in bends.values():
             if b.bend_dir > w.get():
                 oob.append(b)
-            ht = round(b.bendiness*w.get())
-            processed_bends.append(Bend(b.position, ht, b.bend_dir))
-
-        if len(oob) > 0:
-            str = ""
+            else:
+                ht = round(b.bendiness*float(w.get()/4))
+                processed_bends.append(Bend(b.position, ht, b.bend_dir))
+        print(processed_bends)
+        if len(oob) > 0: # warn if there are bends outside of width
+            coords = ""
             for b in oob:
-                str+="("+b.bend_dir+", "+b.position+"), "
+                d = str(b.bend_dir)
+                p = str(b.position)
+                coords+="("+d+", "+p+"), "
 
-            messagebox.showinfo("Warning", "Bends at the following coordinates" + str + "are outside of the tube's width and will be ignored")
-
-
-
-        processed_bends = processed_bends.sort()
+            messagebox.showinfo("Warning", "Bends at the following coordinates" + coords + "are outside of the tube's width and will be ignored")
+        processed_bends.sort()
         end_len = h.get()-processed_bends[len(processed_bends)-1].position
+        export_knitout(w.get() // 2, end_len, processed_bends, E1.get())
     else:
-        end_len = h.get()
+        export_tube()
 
-    export_knitout(w.get()//2, end_len, processed_bends, E1.get())
 
 def export_tube():
     #print(h.get())
@@ -244,7 +242,7 @@ if __name__ == "__main__":
     #width = 10
     #height = 2
     #bends: [Draft_Bend] = []
-    bends = dict()
+    bends = dict() # map from coordinates to Draft_Bends
     filename = "snek"
     #circles:
 
@@ -290,11 +288,7 @@ if __name__ == "__main__":
     E1 = Entry(btm, bd=5, textvariable=filename)
     E1.pack(side=LEFT)
 
-    if len(bends.values()) > 0:
-        btn = Button(btm, text="KNIT", command=adjust_params)
-    else:
-        btn = Button(btm, text="KNIT", command=export_tube)
-
+    btn = Button(btm, text="KNIT", command=adjust_params)
     btn.pack(side=RIGHT)
 
     window.mainloop()
