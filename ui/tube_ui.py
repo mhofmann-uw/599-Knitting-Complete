@@ -66,26 +66,15 @@ def open_menu(col: int, row: int, x: int, y: int, is_new: bool, circ, ring):
         C.delete(ring)
         menu.destroy()
 
-    def cancel():
-        if is_new is True:
-            C.delete(circ)
-        close()
+    def set_bendiness(e):
+        print(bendiness.get())
 
-    cancel_button = Button(menu, text="Cancel", command=cancel)
-    cancel_button.pack(pady=20)
-
-    def remove():
-        if is_new is False:
-            # print("erase circle")
-            C.delete(circ)
-            del bends[(col, row)]# remove bend from array
-            close()
-
-    if is_new is True:
-        remove_button = Button(menu, text="Remove Bend", command=remove, state=DISABLED)
-    else:
-        remove_button = Button(menu, text="Remove Bend", command=remove, bg="red")
-    remove_button.pack(pady=20)
+    bendiness = DoubleVar()
+    scale = Scale(menu, variable=bendiness, from_=0, to=1, resolution=0.01, length=150, orient=HORIZONTAL, label="Bendiness", command=set_bendiness)
+    if is_new is False: # set default to be current val
+        # scale.set(bends[(col, row)].bendiness) both work
+        bendiness.set(bends[(col, row)].bendiness)
+    scale.pack(side=TOP)
 
     def place():
         if is_new is True:
@@ -103,17 +92,28 @@ def open_menu(col: int, row: int, x: int, y: int, is_new: bool, circ, ring):
         place_button = Button(menu, text="Place", command=place, bg="green")
     else:
         place_button = Button(menu, text="Save", command=place, bg="green")
-    place_button.pack(pady=20)
+    place_button.pack(pady=5)
 
-    def set_bendiness(e):
-        print(bendiness.get())
+    def cancel():
+        if is_new is True:
+            C.delete(circ)
+        close()
 
-    bendiness = DoubleVar()
-    scale = Scale(menu, variable=bendiness, from_=0, to=1, resolution=0.01, length=150, orient=HORIZONTAL, label="Bendiness", command=set_bendiness)
-    if is_new is False: # set default to be current val
-        # scale.set(bends[(col, row)].bendiness) both work
-        bendiness.set(bends[(col, row)].bendiness)
-    scale.pack(side=TOP)
+    cancel_button = Button(menu, text="Cancel", command=cancel)
+    cancel_button.pack(pady=5)
+
+    def remove():
+        if is_new is False:
+            # print("erase circle")
+            C.delete(circ)
+            del bends[(col, row)]# remove bend from array
+            close()
+
+    if is_new is True:
+        remove_button = Button(menu, text="Remove Bend", command=remove, state=DISABLED)
+    else:
+        remove_button = Button(menu, text="Remove Bend", command=remove, bg="red")
+    remove_button.pack(pady=5)
 
     menu.protocol('WM_DELETE_WINDOW', cancel)
 
@@ -208,7 +208,7 @@ def adjust_params():
         #bends = bends.sort()
         processed_bends = []
         for b in bends.values():
-            if b.bend_dir > w.get():
+            if b.bend_dir > w.get() or b.position > h.get():
                 oob.append(b)
             else:
                 ht = round(b.bendiness*float(w.get()/4))
@@ -221,10 +221,21 @@ def adjust_params():
                 p = str(b.position)
                 coords+="("+d+", "+p+"), "
 
-            messagebox.showinfo("Warning", "Bends at the following coordinates" + coords + "are outside of the tube's width and will be ignored")
-        processed_bends.sort()
-        end_len = h.get()-processed_bends[len(processed_bends)-1].position
-        export_knitout(w.get() // 2, end_len, processed_bends, E1.get())
+            action = messagebox.askokcancel("Warning", "Bends at the following coordinates" + coords + "are outside of the tube and will be ignored")
+            if action is True:
+                if len(processed_bends) > 0:
+                    processed_bends.sort()
+                    end_len = h.get() - processed_bends[len(processed_bends) - 1].position
+                    export_knitout(w.get() // 2, end_len, processed_bends, E1.get())
+                else:
+                    export_tube()
+        else:
+            if len(processed_bends) > 0:
+                processed_bends.sort()
+                end_len = h.get()-processed_bends[len(processed_bends)-1].position
+                export_knitout(w.get() // 2, end_len, processed_bends, E1.get())
+            else:
+                export_tube()
     else:
         export_tube()
 
