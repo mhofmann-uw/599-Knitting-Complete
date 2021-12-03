@@ -1,3 +1,5 @@
+from tkinter import messagebox
+
 from tests.test_tube import test_multi_bend, Bend
 import tkinter as tk
 from tkinter import *
@@ -88,10 +90,14 @@ def open_menu(col: int, row: int, x: int, y: int, is_new: bool, circ):
 
     def place():
         if is_new is True:
-            bends.append(Draft_Bend(y//10-1, bendiness.get(), x//10-1))
+            #bends.append(Draft_Bend(y//10-1, bendiness.get(), x//10-1))
+            bends[(col, row)] = Draft_Bend(y//10-1, bendiness.get(), x//10-1)
+            print(bends)
         else:
-            #bends.remove(???) todo
-            bends.append(Draft_Bend(y//10-1, bendiness.get(), x//10-1))
+            #bends.remove(???) todo: make sure it's overriden
+            #bends.append(Draft_Bend(y//10-1, bendiness.get(), x//10-1))
+            bends[(col, row)] = Draft_Bend(y//10-1, bendiness.get(), x//10-1)
+            print(bends)
         close()
 
     if is_new is True:
@@ -115,7 +121,7 @@ def open_menu(col: int, row: int, x: int, y: int, is_new: bool, circ):
 
 def clicked_on_existing(row: int):
     #print(bends)
-    for b in bends:
+    for b in bends.values():
         #print(str(b.position) + "?" + str(row))
         if b.position == row:
             return b
@@ -195,15 +201,33 @@ def write_slogan():
     print("Tkinter is easy to use!")
 
 def adjust_params():
-    #todo: switch from draft_bends to bends here by calculating bendiness
+    #switch from draft_bends to bends here by calculating bendiness
     # todo: warn if there are bends outside of width
-    if bends and len(bends) > 0:
-        bends = bends.sort()
-        end_len = h.get()-bends[len(bends)-1].position
+    oob = []
+    if len(bends.values()) > 0:
+        #bends = bends.sort()
+        processed_bends = []
+        for b in bends.values():
+            if b.bend_dir > w.get():
+                oob.append(b)
+            ht = round(b.bendiness*w.get())
+            processed_bends.append(Bend(b.position, ht, b.bend_dir))
+
+        if len(oob) > 0:
+            str = ""
+            for b in oob:
+                str+="("+b.bend_dir+", "+b.position+"), "
+
+            messagebox.showinfo("Warning", "Bends at the following coordinates" + str + "are outside of the tube's width and will be ignored")
+
+
+
+        processed_bends = processed_bends.sort()
+        end_len = h.get()-processed_bends[len(processed_bends)-1].position
     else:
         end_len = h.get()
 
-    export_knitout(w.get()//2, end_len, bends, E1.get())
+    export_knitout(w.get()//2, end_len, processed_bends, E1.get())
 
 def export_tube():
     #print(h.get())
@@ -219,7 +243,8 @@ def export_knitout(w: int, end_len: int, b: List[Bend], fn):
 if __name__ == "__main__":
     #width = 10
     #height = 2
-    bends: [Draft_Bend] = []
+    #bends: [Draft_Bend] = []
+    bends = dict()
     filename = "snek"
     #circles:
 
@@ -265,7 +290,7 @@ if __name__ == "__main__":
     E1 = Entry(btm, bd=5, textvariable=filename)
     E1.pack(side=LEFT)
 
-    if len(bends) > 0:
+    if len(bends.values()) > 0:
         btn = Button(btm, text="KNIT", command=adjust_params)
     else:
         btn = Button(btm, text="KNIT", command=export_tube)
