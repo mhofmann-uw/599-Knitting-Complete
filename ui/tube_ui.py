@@ -52,29 +52,45 @@ class Draft_Bend:
             raise AttributeError
 
 
-def open_menu(col: int, row: int, is_new: bool):
+def open_menu(col: int, row: int, x: int, y: int, is_new: bool):
     menu = Toplevel(window)
     menu.title("Edit bend")
     menu.geometry("200x200")
     Label(menu, text="Edit bend at column "+str(col)+" and row "+str(row)).pack()
 
     def cancel():
+        if is_new is True:
+            # todo erase the circle
+            print("erase circle")
         menu.destroy()
 
     cancel_button = Button(menu, text="Cancel", command=cancel)
     cancel_button.pack(pady=20)
 
     def remove():
+        if is_new is False:
+            # todo erase the circle
+            print("erase circle")
+
         menu.destroy()
         # remove bend from array todo
         # remove circle from canvas todo
 
-    if is_new:
+    if is_new is True:
         remove_button = Button(menu, text="Remove Bend", command=remove, state=DISABLED)
     else:
-        remove_button = Button(menu, text="Remove Bend", command=remove)
-
+        remove_button = Button(menu, text="Remove Bend", command=remove, bg="red")
     remove_button.pack(pady=20)
+
+    def place():
+        bends.append(Draft_Bend(y//10-1, 1, x//10-1))
+        menu.destroy()
+
+    if is_new is True:
+        place_button = Button(menu, text="Place", command=place, bg="green")
+    else:
+        place_button = Button(menu, text="Save", command=place, bg="green")
+    place_button.pack(pady=20)
 
 
     #todo slidey
@@ -111,7 +127,7 @@ def place_bend(e):
         if existing.bend_dir == col:
             # bring up height and delete menu
             print("edit")
-            open_menu(col, row, False)
+            open_menu(col, row, x, y, False)
         else:
             # just move the circle todo
             print("move")
@@ -121,8 +137,8 @@ def place_bend(e):
         #diamond = C.create_polygon(, fill="gray") todo
         #print(x//10-1)
         #print(y//10-1)
-        bends.append(Draft_Bend(y//10-1, 1, x//10-1))
-        open_menu(col, row, True)
+        #bends.append(Draft_Bend(y//10-1, 1, x//10-1))
+        open_menu(col, row, x, y, True)
 
 
 def set_width(e):
