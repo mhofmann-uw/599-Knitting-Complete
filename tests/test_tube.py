@@ -157,7 +157,7 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
     :param: width is same as body width and short row triangle width
     :param: bend_shift is an int >= 0 and < width*2 that is where the bend triangle starts.
     """
-    assert bend_shift < width
+    assert bend_shift >= 0 and bend_shift < width*2
 
     # map ints to needles
 
@@ -469,6 +469,8 @@ if __name__ == "__main__":
     test_multi_bend(16, 5, [Bend(5, 1, 0), Bend(10, 2, 0), Bend(15, 3, 0), Bend(20, 4, 0), Bend(25, 5, 0), Bend(30, 6, 0), Bend(35, 7, 0), Bend(40, 8, 0)], "diffheights", 3)
     #test_multi_bend(16, 2, [Bend(2, 1, 0), Bend(4, 2, 0)], "smalldiffheightscommented", 3)
     """
+    #test_multi_bend(16, 0, [Bend(2, 1, 0), Bend(6, 1, 8), Bend(10, 2, 0), Bend(14, 2, 8), Bend(18, 3, 0), Bend(22, 3, 8), Bend(26, 4, 0), Bend(30, 4, 8), Bend(34, 5, 0), Bend(38, 5, 8), Bend(42, 6, 0), Bend(46, 6, 8)], "6pairsinc", 3)
+    test_multi_bend(16, 4, [Bend(2, 1, 0), Bend(6, 2, 4), Bend(10, 4, 8), Bend(14, 6, 12), Bend(18, 8, 16)], "iseqbackend", 3)
 
 
 
