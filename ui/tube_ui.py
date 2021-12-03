@@ -54,7 +54,56 @@ class Draft_Bend:
             raise AttributeError
 
 
-def open_menu(col: int, row: int, x: int, y: int, is_new: bool, circ, ring):
+class ShortRows:
+    """
+    A Simple class structure for representing short rows
+    """
+
+    def __init__(self, x: int, y: int, height: float, width: int):
+        """
+        :param x: upper left point of short rows
+        :param y: upper left point of short rows
+        :param height: height of HALF of the pair
+        :param width: width of base of shape
+        """
+        self.x: int = x
+        self.y: int = y-height/2
+        self.height: float = height
+        self.width: int = width
+        assert self.x is not None
+        assert self.y is not None
+        assert self.height is not None
+        assert self.width is not None
+        assert height >= 0
+
+    def __str__(self):
+        return f"bend ({self.x}, {self.y}) {self.height} + {self.width}"
+
+    def __repr__(self):
+        return str(self)
+
+    def draw(self):
+        # draw two pairs of arcs
+        shrinks = self.x, self.y, self.x+self.width, self.height+self.y
+        grows = self.x, self.height+self.y, self.x+self.width, self.height*2+self.y
+        C.create_arc(shrinks, start=180, extent=180, outline="orange", width=2)
+        C.create_arc(grows, start=0, extent=180, outline="orange", width=2)
+        # todo draw 2nd pair
+
+
+# todo
+"""
+     def adjust_bend(self):
+        # squish the arcs
+
+    def adjust_width(self):
+        # shrink the arcs
+        # shift the arcs
+"""
+# todo: create actual gap in fabric
+
+
+def open_menu(col: int, row: int, x: int, y: int, is_new: bool, circ, ring, short_rows):
     menu = Toplevel(window)
     menu.grab_set()  # stop any interaction until the menu box is closed
     menu.title("Edit bend")
@@ -67,12 +116,15 @@ def open_menu(col: int, row: int, x: int, y: int, is_new: bool, circ, ring):
 
     def set_bendiness(e):
         print(bendiness.get())
+        # todo: adjust arcs
 
     bendiness = DoubleVar()
     scale = Scale(menu, variable=bendiness, from_=0, to=1, resolution=0.01, length=150, orient=HORIZONTAL, label="Bendiness", command=set_bendiness)
     if is_new is False: # set default to be current val
         # scale.set(bends[(col, row)].bendiness) both work
         bendiness.set(bends[(col, row)].bendiness)
+    else:
+        bendiness.set(1.0)
     scale.pack(side=TOP)
 
     def place():
@@ -93,6 +145,7 @@ def open_menu(col: int, row: int, x: int, y: int, is_new: bool, circ, ring):
     def cancel():
         if is_new is True:
             C.delete(circ)
+            C.delete(short_rows)
         close()
 
     cancel_button = Button(menu, text="Cancel", command=cancel)
@@ -102,6 +155,7 @@ def open_menu(col: int, row: int, x: int, y: int, is_new: bool, circ, ring):
         if is_new is False:
             # print("erase circle")
             C.delete(circ)
+            C.delete(short_rows)
             del bends[(col, row)]  # remove bend from array
             close()
 
@@ -145,8 +199,11 @@ def place_bend(e):
         if existing.bend_dir == col:
             # bring up height and delete menu
             print("edit")
+            short_rows = ShortRows(x, y, 10 * w.get() // 4, 10 * w.get() // 2)
+            print(short_rows)
+            short_rows.draw()
             ring = C.create_oval(x - r, y - r, x + r, y + r, outline="pink", width="3")
-            open_menu(col, row, x, y, False, C.find_closest(x, y), ring)
+            open_menu(col, row, x, y, False, C.find_closest(x, y), ring, short_rows)
         """
         else:
             # just move the circle 
@@ -156,11 +213,14 @@ def place_bend(e):
     elif (h.get()*10+10) >= y >= 10 and (w.get()*10+10) >= x >= 10:
         circ = C.create_oval(x - r, y - r, x + r, y + r, fill="green")
         ring = C.create_oval(x - r, y - r, x + r, y + r, outline="pink", width="3")
-        # diamond = C.create_polygon(, fill="gray") todo
+        short_rows = ShortRows(x, y, 10*w.get()//4, 10*w.get()//2)
+        print(short_rows)
+        short_rows.draw()
+        # diamond = C.create_polygon(, fill="gray")
         # print(x//10-1)
         # print(y//10-1)
         # bends.append(Draft_Bend(y//10-1, 1, x//10-1))
-        open_menu(col, row, x, y, True, circ, ring)
+        open_menu(col, row, x, y, True, circ, ring, short_rows)
 
 
 def set_width(e):
@@ -175,7 +235,7 @@ def set_width(e):
     for m in range(0, (y1-10)//10):
         C.create_line(10, 10+m*10, 10+10*w.get(), 10+m*10)
     """
-    # todo adjust bend diamond heights
+    # todo adjust arcs
 
 
 def set_height(e):
