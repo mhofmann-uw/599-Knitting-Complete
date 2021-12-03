@@ -5,6 +5,7 @@ import tkinter as tk
 from tkinter import *
 from typing import Optional, List, Tuple, Dict, Union, Set
 
+
 # https://realpython.com/python-gui-tkinter/
 # https://www.tutorialspoint.com/python/python_gui_programming.htm
 # need to keep map of coordinates to canvas objects so they can be deleted after--nvm, just use find_closest
@@ -204,8 +205,11 @@ def adjust_params():
             if b.bend_dir > w.get() or b.position > h.get():
                 oob.append(b)
             else:
+                shift = b.bend_dir
+                if b.bend_dir == w.get():
+                    shift = 0
                 ht = round(b.bendiness*float(w.get()/4))
-                processed_bends.append(Bend(b.position, ht, b.bend_dir))
+                processed_bends.append(Bend(b.position, ht, shift))
         print(processed_bends)
         if len(oob) > 0:  # warn if there are bends outside of width
             coords = ""
@@ -256,7 +260,7 @@ if __name__ == "__main__":
 
     instructions = StringVar()
     label = Label(top, textvariable=instructions, justify=LEFT)
-    instructions.set("Welcome to Snake Designer!\nPick your height and width.\nClick on the tube to place bends. There can be at most one bend per row.\nPretend that the left and right edges of the rectangle are connected to form a tube.\nClick KNIT to generate the Knitout file for your snake!\n")
+    instructions.set("Welcome to Snake Designer!\nPick your height and width.\nClick on the tube to place bends. There can be at most one bend per row.\nClick on an existing bend to edit it.\nPretend that the left and right edges of the rectangle are connected to form a tube.\nClick KNIT to generate the Knitout file for your snake!\n")
     label.pack()
 
     tube = tk.Frame(master=window)
@@ -274,9 +278,9 @@ if __name__ == "__main__":
     coord = 10, 50, 240, 210
     rect = C.create_rectangle(10, 10, 90, 30, fill="yellow")
     for n in range(0, 41):
-        C.create_line(10+n*10, 10, 10+n*10, 410)
+        C.create_line(10+n*10, 10, 10+n*10, 410, fill="gray")
     for m in range(0, 41):
-        C.create_line(10, 10+m*10, 410, 10+m*10)
+        C.create_line(10, 10+m*10, 410, 10+m*10, fill="gray")
 
     C.pack()
 

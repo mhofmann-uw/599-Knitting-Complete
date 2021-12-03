@@ -157,6 +157,8 @@ def iso_bend_shifted_helper(width, height, c1, machine_state, carriage_passes, i
     :param: width is same as body width and short row triangle width
     :param: bend_shift is an int >= 0 and < width*2 that is where the bend triangle starts.
     """
+    assert bend_shift < width
+
     # map ints to needles
 
 
@@ -456,6 +458,9 @@ def test_multi_bend(width, end, bends, file, carrier:int=3):
 
 if __name__ == "__main__":
     #to knit
+    test_multi_bend(10, 2, [Bend(2, 2, 10)], "edge", 3)
+
+    """
     test_multi_bend(10, 2, [Bend(2, 2, 0), Bend(4, 4, 0)], "smalldiffheightsevens", 3)
     test_multi_bend(10, 2, [Bend(2, 1, 0), Bend(4, 3, 0), Bend(6, 5, 0)], "smalldiffheightsodds", 3)
 
@@ -463,6 +468,8 @@ if __name__ == "__main__":
     test_multi_bend(16, 5, [Bend(2, 8, 0), Bend(4, 8, 0), Bend(6, 8, 0), Bend(8, 8, 0), Bend(10, 8, 0), Bend(12, 8, 0), Bend(14, 8, 0), Bend(16, 8, 0), Bend(18, 8, 0)], "bendonself", 3)
     test_multi_bend(16, 5, [Bend(5, 1, 0), Bend(10, 2, 0), Bend(15, 3, 0), Bend(20, 4, 0), Bend(25, 5, 0), Bend(30, 6, 0), Bend(35, 7, 0), Bend(40, 8, 0)], "diffheights", 3)
     #test_multi_bend(16, 2, [Bend(2, 1, 0), Bend(4, 2, 0)], "smalldiffheightscommented", 3)
+    """
+
 
 
 
