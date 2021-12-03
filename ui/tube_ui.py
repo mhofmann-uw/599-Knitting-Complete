@@ -54,16 +54,16 @@ class Draft_Bend:
             raise AttributeError
 
 
-def open_menu(col: int, row: int, x: int, y: int, is_new: bool, circ):
+def open_menu(col: int, row: int, x: int, y: int, is_new: bool, circ, ring):
     menu = Toplevel(window)
     menu.grab_set() # stop any interaction until the menu box is closed
     menu.title("Edit bend")
     menu.geometry("200x200")
     Label(menu, text="Edit bend at column "+str(col)+" and row "+str(row)).pack()
-    # todo: draw ring
 
     def close():
         #delete ring
+        C.delete(ring)
         menu.destroy()
 
     def cancel():
@@ -105,14 +105,14 @@ def open_menu(col: int, row: int, x: int, y: int, is_new: bool, circ):
         place_button = Button(menu, text="Save", command=place, bg="green")
     place_button.pack(pady=20)
 
-
     def set_bendiness(e):
         print(bendiness.get())
 
-
-    #todo set default to be current val
     bendiness = DoubleVar()
     scale = Scale(menu, variable=bendiness, from_=0, to=1, resolution=0.01, length=150, orient=HORIZONTAL, label="Bendiness", command=set_bendiness)
+    if is_new is False: # set default to be current val
+        # scale.set(bends[(col, row)].bendiness) both work
+        bendiness.set(bends[(col, row)].bendiness)
     scale.pack(side=TOP)
 
     menu.protocol('WM_DELETE_WINDOW', cancel)
@@ -149,7 +149,8 @@ def place_bend(e):
         if existing.bend_dir == col:
             # bring up height and delete menu
             print("edit")
-            open_menu(col, row, x, y, False, C.find_closest(x, y))
+            ring = C.create_oval(x - r, y - r, x + r, y + r, outline="pink", width="3")
+            open_menu(col, row, x, y, False, C.find_closest(x, y), ring)
         """
         else:
             # just move the circle 
@@ -159,11 +160,12 @@ def place_bend(e):
 
     elif (h.get()*10+10) >= y >= 10 and (w.get()*10+10) >= x >= 10:
         circ = C.create_oval(x - r, y - r, x + r, y + r, fill="green")
+        ring = C.create_oval(x - r, y - r, x + r, y + r, outline="pink", width="3")
         #diamond = C.create_polygon(, fill="gray") todo
         #print(x//10-1)
         #print(y//10-1)
         #bends.append(Draft_Bend(y//10-1, 1, x//10-1))
-        open_menu(col, row, x, y, True, circ)
+        open_menu(col, row, x, y, True, circ, ring)
 
 
 def set_width(e):
