@@ -5,6 +5,8 @@ from typing import Optional, List, Tuple, Dict, Union, Set
 
 #https://realpython.com/python-gui-tkinter/
 #https://www.tutorialspoint.com/python/python_gui_programming.htm
+# need to keep map of coordinates to canvas objects so they can be deleted after--nvm, just use find_closest
+# todo need to keep map of coordinates to bends so they can be deleted/edited after
 
 
 class Draft_Bend:
@@ -52,29 +54,31 @@ class Draft_Bend:
             raise AttributeError
 
 
-def open_menu(col: int, row: int, x: int, y: int, is_new: bool):
+def open_menu(col: int, row: int, x: int, y: int, is_new: bool, circ):
     menu = Toplevel(window)
     menu.title("Edit bend")
     menu.geometry("200x200")
     Label(menu, text="Edit bend at column "+str(col)+" and row "+str(row)).pack()
+    # todo: draw ring
+
+    def close():
+        #delete ring
+        menu.destroy()
 
     def cancel():
         if is_new is True:
-            # todo erase the circle
-            print("erase circle")
-        menu.destroy()
+            C.delete(circ)
+        close()
 
     cancel_button = Button(menu, text="Cancel", command=cancel)
     cancel_button.pack(pady=20)
 
     def remove():
         if is_new is False:
-            # todo erase the circle
-            print("erase circle")
-
-        menu.destroy()
-        # remove bend from array todo
-        # remove circle from canvas todo
+            # print("erase circle")
+            C.delete(circ)
+            # remove bend from array todo
+            close()
 
     if is_new is True:
         remove_button = Button(menu, text="Remove Bend", command=remove, state=DISABLED)
@@ -83,8 +87,12 @@ def open_menu(col: int, row: int, x: int, y: int, is_new: bool):
     remove_button.pack(pady=20)
 
     def place():
-        bends.append(Draft_Bend(y//10-1, 1, x//10-1))
-        menu.destroy()
+        if is_new is True:
+            bends.append(Draft_Bend(y//10-1, bendiness.get(), x//10-1))
+        else:
+            #bends.remove(???) todo
+            bends.append(Draft_Bend(y//10-1, bendiness.get(), x//10-1))
+        close()
 
     if is_new is True:
         place_button = Button(menu, text="Place", command=place, bg="green")
@@ -93,7 +101,16 @@ def open_menu(col: int, row: int, x: int, y: int, is_new: bool):
     place_button.pack(pady=20)
 
 
-    #todo slidey
+    def set_bendiness(e):
+        print(bendiness.get())
+
+
+    #todo set default to be current val
+    bendiness = IntVar()
+    scale = Scale(menu, variable=bendiness, from_=0, to=1, resolution=0.01, length=150, orient=HORIZONTAL, label="Bendiness", command=set_bendiness)
+    scale.pack(side=TOP)
+
+    menu.protocol('WM_DELETE_WINDOW', cancel)
 
 
 def clicked_on_existing(row: int):
@@ -127,10 +144,13 @@ def place_bend(e):
         if existing.bend_dir == col:
             # bring up height and delete menu
             print("edit")
-            open_menu(col, row, x, y, False)
+            open_menu(col, row, x, y, False, C.find_closest(x, y))
+        """
         else:
-            # just move the circle todo
+            # just move the circle 
             print("move")
+        """
+
 
     elif (h.get()*10+10) >= y >= 10 and (w.get()*10+10) >= x >= 10:
         circ = C.create_oval(x - r, y - r, x + r, y + r, fill="green")
@@ -138,7 +158,7 @@ def place_bend(e):
         #print(x//10-1)
         #print(y//10-1)
         #bends.append(Draft_Bend(y//10-1, 1, x//10-1))
-        open_menu(col, row, x, y, True)
+        open_menu(col, row, x, y, True, circ)
 
 
 def set_width(e):
@@ -201,6 +221,7 @@ if __name__ == "__main__":
     #height = 2
     bends: [Draft_Bend] = []
     filename = "snek"
+    #circles:
 
     window = tk.Tk()
     top = tk.Frame(master=window)
