@@ -75,7 +75,6 @@ class ShortRows:
         assert self.height is not None
         assert self.width is not None
         assert height >= 0
-        self.draw()
 
     def __str__(self):
         return f"bend ({self.x}, {self.y}) {self.height} + {self.width}"
@@ -99,6 +98,7 @@ class ShortRows:
 """
      def adjust_bend(self):
         # squish the arcs
+
     def adjust_width(self):
         # shrink the arcs
         # shift the arcs
@@ -200,6 +200,9 @@ def place_bend(e):
         if existing.bend_dir == col:
             # bring up height and delete menu
             print("edit")
+            short_rows = ShortRows(x, y, 10 * w.get() // 4, 10 * w.get() // 2)
+            print(short_rows)
+            short_rows.draw()
             ring = C.create_oval(x - r, y - r, x + r, y + r, outline="pink", width="3")
             open_menu(col, row, x, y, False, ring)
         """
@@ -231,7 +234,7 @@ def set_width(e):
     for m in range(0, (y1-10)//10):
         C.create_line(10, 10+m*10, 10+10*w.get(), 10+m*10)
     """
-    # todo adjust bend diamond heights
+    # todo adjust arcs
 
 
 def set_height(e):
