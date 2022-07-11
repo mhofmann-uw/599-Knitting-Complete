@@ -59,6 +59,55 @@ def _cast_on(tuck_carrier, close_carrier, start_needle=0, end_needle=20, double=
     return carriage_passes, instructions, machine_state
 
 
+def _cast_on_round(tuck_carrier, close_carrier, start_needle=0, end_needle=20):
+    machine_state = Machine_State()
+    carriage_passes = []
+    instructions = [";!knitout-2\n",
+                    ";;Machine: SWG091N2\n",
+                    ";;Gauge: 5\n",
+                    ";;Width: 250\n",
+                    ";;Carriers: 1 2 3 4 5 6 7 8 9 10\n",
+                    ";;Position: Center\n"]
+    # front RtL
+    tuck_rl = {}
+    for n in range(end_needle - 1, start_needle, -2):
+        needle = Needle(True, n)
+        tuck_rl[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=tuck_carrier)
+    _add_carriage_pass(Carriage_Pass(Instruction_Type.Tuck, Pass_Direction.Right_to_Left, tuck_rl, machine_state), carriage_passes, instructions)
+    # back LtR
+    tuck_lr = {}
+    for n in range(start_needle, end_needle, 2):
+        needle = Needle(False, n)
+        tuck_lr[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=tuck_carrier)
+    _add_carriage_pass(Carriage_Pass(Instruction_Type.Tuck, Pass_Direction.Left_to_Right, tuck_lr, machine_state), carriage_passes, instructions)
+    # front RtL others
+    tuck_rl = {}
+    for n in range(end_needle - 2, start_needle - 1, -2):
+        needle = Needle(True, n)
+        tuck_rl[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=tuck_carrier)
+    _add_carriage_pass(Carriage_Pass(Instruction_Type.Tuck, Pass_Direction.Right_to_Left, tuck_rl, machine_state), carriage_passes, instructions)
+    # back LtR others
+    tuck_lr = {}
+    for n in range(start_needle + 1, end_needle + 1, 2):
+        needle = Needle(False, n)
+        tuck_lr[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=tuck_carrier)
+    _add_carriage_pass(Carriage_Pass(Instruction_Type.Tuck, Pass_Direction.Left_to_Right, tuck_lr, machine_state), carriage_passes, instructions)
+
+    knits = {}
+    # knit all in front RtL
+    for n in range(end_needle - 1, start_needle - 1, -1):
+        needle = Needle(True, n)
+        knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=close_carrier)
+    _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, Pass_Direction.Right_to_Left, knits, machine_state), carriage_passes, instructions)
+    knits = {}
+    # knit all in back LtR
+    for n in range(start_needle, end_needle):
+        needle = Needle(False, n)
+        knits[needle] = Instruction_Parameters(needle, involved_loop=-1, carrier=close_carrier)
+    _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, Pass_Direction.Left_to_Right, knits, machine_state), carriage_passes, instructions)
+    return carriage_passes, instructions, machine_state
+
+
 def test_platting():
     c1 = Yarn_Carrier([3, 4])
     c2 = Yarn_Carrier([4, 3])
@@ -367,3 +416,36 @@ def test_double_jersey():
     instructions.append(outhook(machine_state, c1))
 
     _write_instructions("double-jersey.k", instructions)
+
+
+def test_tube(circ: int = 4, height: int = 4, carrier:int=3):
+    c1 = Yarn_Carrier(carrier)
+    width = circ//2
+    if circ % 2 == 1:
+        width = circ//2+1
+    carriage_passes, instructions, machine_state = _cast_on_round(c1, c1, start_needle=0, end_needle=width, double=False)
+    instructions.append(rack(machine_state, -.75))  # rack for all needle knitting
+    for row in range(0, height):
+        knits = {}
+        # front RtL
+        for n in range(width-1, -1, -1):
+            front_needle = Needle(True, n)
+            knits[front_needle] = Instruction_Parameters(front_needle, involved_loop=-1, carrier=c1)
+        _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, Pass_Direction.Right_to_Left, knits, machine_state), carriage_passes, instructions)
+
+        knits = {}
+        # back LtR
+        for n in range(0, width):
+            back_needle = Needle(False, n)
+            knits[back_needle] = Instruction_Parameters(back_needle, involved_loop=-1, carrier=c1)
+        _add_carriage_pass(Carriage_Pass(Instruction_Type.Knit, Pass_Direction.Left_to_Right, knits, machine_state), carriage_passes, instructions)
+
+    instructions.append(outhook(machine_state, c1))
+
+    _write_instructions("tube.k", instructions)
+
+
+if __name__ == "__main__":
+    #test_double_jersey()
+    #test_tube(12, 12, 3)
+    test_birdseye_3()
